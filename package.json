@@ -1,0 +1,44 @@
+{
+  "name": "@nodearch/rest",
+  "version": "0.0.1",
+  "description": "nodearch rest server",
+  "main": "./dist/index.js",
+  "scripts": {
+    "test": "mocha -r ts-node/register tests/**/*.spec.ts",
+    "test-cov": "nyc -r lcov -e .ts -x \"*.test.ts\" mocha -r ts-node/register tests/**/*.spec.ts && nyc report",
+    "build": "rm -rf ./dist && tsc",
+    "release": "npm publish --access public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nodearch/rest.git"
+  },
+  "keywords": [
+    "nodearch",
+    "nodearch-rest"
+  ],
+  "author": "https://github.com/AhmedAli7O1",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/nodearch/rest/issues",
+    "email": "bluemax7o1@gmail.com"
+  },
+  "engines": {
+    "node": ">=8.0.0 <*"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.0.8",
+    "chai": "^4.2.0",
+    "mocha": "^6.1.4",
+    "nyc": "^14.1.1",
+    "reflect-metadata": "^0.1.13",
+    "ts-node": "^8.3.0",
+    "typescript": "^3.5.2"
+  },
+  "dependencies": {
+    "@types/express": "^4.17.0",
+    "express": "^4.17.1"
+  }
+}
