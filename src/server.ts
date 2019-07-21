@@ -4,6 +4,7 @@ import * as http from 'http';
 import { METADATA_KEY } from './constants';
 import { RouteInfo } from './interfaces';
 import { HttpMethod } from './enums';
+import { validate } from './validation';
 
 
 export class RestServer {
@@ -50,10 +51,17 @@ export class RestServer {
 
       ctrlMethods.forEach((ctrlMethod: any) => {
         const routeInfo = this.getMethodRouteInfo(ctrlInstance, ctrlMethod);
-        const middlewares = this.getMethodMiddlewares(ctrlInstance, ctrlMethod);
+        const methodMiddlewares = this.getMethodMiddlewares(ctrlInstance, ctrlMethod);
+        const validationSchema = this.getValidationSchema(ctrlInstance, ctrlMethod);
+
+        const middlewares = [...controllerMiddlewares, ...methodMiddlewares];
+
+        if (validationSchema) {
+          middlewares.push(validate(validationSchema));
+        }
 
         if (routeInfo) {
-          this.routerMapping(routeInfo, controllerMiddlewares.concat(middlewares), ctrlInstance[ctrlMethod], ctrlInstance);
+          this.routerMapping(routeInfo, middlewares, ctrlInstance[ctrlMethod], ctrlInstance);
         }
       });
     });
@@ -71,6 +79,10 @@ export class RestServer {
 
   private getControllerMiddlewares (ctrlInstance: any): any[] {
     return Reflect.getMetadata(METADATA_KEY.ARCH_MIDDLEWARE, ctrlInstance) || [];
+  }
+
+  private getValidationSchema (ctrlInstance: any, ctrlMethod: string): any[] {
+    return Reflect.getMetadata(METADATA_KEY.ARCH_VALIDATION_SCHEMA, ctrlInstance, ctrlMethod);
   }
 
   private routerMapping(routeInfo: RouteInfo, middlewares: any[], handler: any, ctrlInstance: any) {

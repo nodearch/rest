@@ -6,3 +6,4 @@ export * from './patch';
 export * from './post';
 export * from './put';
 export * from './middleware';
+export * from './validate';
