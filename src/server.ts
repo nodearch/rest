@@ -46,10 +46,14 @@ export class RestServer {
     controllers.forEach((ctrlInstance: any, ctrlDef: Function) => {
       const ctrlMethods = proto.getMethods(ctrlDef);
 
+      const controllerMiddlewares = this.getControllerMiddlewares(ctrlDef);
+
       ctrlMethods.forEach((ctrlMethod: any) => {
         const routeInfo = this.getMethodRouteInfo(ctrlInstance, ctrlMethod);
+        const middlewares = this.getMethodMiddlewares(ctrlInstance, ctrlMethod);
+
         if (routeInfo) {
-          this.routerMapping(routeInfo, ctrlInstance[ctrlMethod]);
+          this.routerMapping(routeInfo, controllerMiddlewares.concat(middlewares), ctrlInstance[ctrlMethod], ctrlInstance);
         }
       });
     });
@@ -61,34 +65,42 @@ export class RestServer {
     return <RouteInfo>Reflect.getMetadata(METADATA_KEY.ARCH_ROUTE_INFO, ctrlInstance, ctrlMethod);
   }
 
-  private routerMapping(routeInfo: RouteInfo, handler: any) {
+  private getMethodMiddlewares (ctrlInstance: any, ctrlMethod: string): any[] {
+    return Reflect.getMetadata(METADATA_KEY.ARCH_MIDDLEWARE, ctrlInstance, ctrlMethod) || [];
+  }
+
+  private getControllerMiddlewares (ctrlInstance: any): any[] {
+    return Reflect.getMetadata(METADATA_KEY.ARCH_MIDDLEWARE, ctrlInstance) || [];
+  }
+
+  private routerMapping(routeInfo: RouteInfo, middlewares: any[], handler: any, ctrlInstance: any) {
     switch (routeInfo.method) {
       case HttpMethod.GET:
-        this.router.get(routeInfo.path, handler);
+        this.router.get(routeInfo.path, middlewares, handler.bind(ctrlInstance));
         break;
       case HttpMethod.POST:
-        this.router.post(routeInfo.path, handler);
+        this.router.post(routeInfo.path, middlewares, handler.bind(ctrlInstance));
         break;
       case HttpMethod.PUT:
-        this.router.put(routeInfo.path, handler);
+        this.router.put(routeInfo.path, middlewares, handler.bind(ctrlInstance));
         break;
       case HttpMethod.DELETE:
-        this.router.delete(routeInfo.path, handler);
+        this.router.delete(routeInfo.path, middlewares, handler.bind(ctrlInstance));
         break;
       case HttpMethod.HEAD:
-        this.router.head(routeInfo.path, handler);
+        this.router.head(routeInfo.path, middlewares, handler.bind(ctrlInstance));
         break;
       case HttpMethod.PATCH:
-        this.router.patch(routeInfo.path, handler);
+        this.router.patch(routeInfo.path, middlewares, handler.bind(ctrlInstance));
         break;
       case HttpMethod.OPTIONS:
-        this.router.options(routeInfo.path, handler);
+        this.router.options(routeInfo.path, middlewares, handler.bind(ctrlInstance));
         break;
       case HttpMethod.ALL:
-        this.router.all(routeInfo.path, handler);
+        this.router.all(routeInfo.path, middlewares, handler.bind(ctrlInstance));
         break;
       default:
-        this.router.all(routeInfo.path, handler);
+        this.router.all(routeInfo.path, middlewares, handler.bind(ctrlInstance));
     }
   }
 

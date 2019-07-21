@@ -1,4 +1,4 @@
-import { HttpMethod } from "./enums";
+import { HttpMethod } from "../enums";
 
 export interface RouteInfo {
   method: HttpMethod;
