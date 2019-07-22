@@ -5,6 +5,7 @@ import { METADATA_KEY } from './constants';
 import { RouteInfo } from './interfaces';
 import { HttpMethod } from './enums';
 import { validate } from './validation';
+import { ValidationStrategy } from './types/validation-strategy';
 
 
 export class RestServer {
@@ -15,19 +16,25 @@ export class RestServer {
   public expressApp: express.Application;
   private archApp: ArchApp;
   private router: express.Router;
+  private validationStrategy?: ValidationStrategy;
 
-  constructor(archApp: ArchApp, port: number, hostname?: string) {
-    this.port = port;
-    this.hostname = hostname;
+  constructor(archApp: ArchApp, validationStrategy?: ValidationStrategy) {
+    this.port = 3000;
+    this.hostname = 'localhost';
     this.archApp = archApp;
+    this.validationStrategy = validationStrategy;
 
     this.expressApp = express();
     this.router = express.Router();
     this.server = http.createServer(this.expressApp);
   }
 
-  async start(): Promise<void> {
+  async start(port: number, hostname?: string): Promise<void> {
     return new Promise((resolve, reject) => {
+
+      this.port === port;
+      this.hostname = hostname || this.hostname;
+
       this.server.listen(this.port);
 
       this.server.on('error', (err) => {
@@ -35,7 +42,7 @@ export class RestServer {
       });
 
       this.server.on('listening', () => {
-        logger.info(`Server running at: http://${this.hostname || 'localhost'}:${this.port}`);
+        logger.info(`Server running at: http://${this.hostname}:${this.port}`);
         resolve();
       });
     });
@@ -57,7 +64,12 @@ export class RestServer {
         const middlewares = [...controllerMiddlewares, ...methodMiddlewares];
 
         if (validationSchema) {
-          middlewares.push(validate(validationSchema));
+          if (this.validationStrategy) {
+            middlewares.push(validate(this.validationStrategy, validationSchema));
+          }
+          else {
+            throw new Error('cannot use @Validate without defining Validation Strategy!');
+          }
         }
 
         if (routeInfo) {
