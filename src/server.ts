@@ -6,6 +6,7 @@ import { RouteInfo } from './interfaces';
 import { HttpMethod } from './enums';
 import { validate } from './validation';
 import { ValidationStrategy } from './types/validation-strategy';
+import url from 'url';
 
 
 export class RestServer {
@@ -61,9 +62,20 @@ export class RestServer {
       const ctrlMethods = proto.getMethods(ctrlDef);
 
       const controllerMiddlewares = this.getControllerMiddlewares(ctrlDef);
+      const controllerPrefix = this.getControllerPrefix(ctrlDef);
+      let routePrefix: string;
+
+      if (controllerPrefix) {
+        routePrefix = this.getRoutePrefix(controllerPrefix);
+      }
 
       ctrlMethods.forEach((ctrlMethod: any) => {
         const routeInfo = this.getMethodRouteInfo(ctrlInstance, ctrlMethod);
+
+        if (routePrefix) {
+          routeInfo.path = routePrefix + routeInfo.path;
+        }
+
         const methodMiddlewares = this.getMethodMiddlewares(ctrlInstance, ctrlMethod);
         const validationSchema = this.getValidationSchema(ctrlInstance, ctrlMethod);
 
@@ -80,6 +92,7 @@ export class RestServer {
 
         if (routeInfo) {
           this.routerMapping(routeInfo, middlewares, ctrlInstance[ctrlMethod], ctrlInstance);
+          this.logger.info(`[Register HTTP Route] ${routeInfo.method} ${routeInfo.path}`)
         }
       });
     });
@@ -97,6 +110,10 @@ export class RestServer {
 
   private getControllerMiddlewares (ctrlInstance: any): any[] {
     return Reflect.getMetadata(METADATA_KEY.ARCH_MIDDLEWARE, ctrlInstance) || [];
+  }
+
+  private getControllerPrefix (ctrlInstance: any): string | undefined {
+    return Reflect.getMetadata(METADATA_KEY.ARCH_CONTROLLER_PREFIX, ctrlInstance);
   }
 
   private getValidationSchema (ctrlInstance: any, ctrlMethod: string): any[] {
@@ -132,5 +149,20 @@ export class RestServer {
       default:
         this.router.all(routeInfo.path, middlewares, handler.bind(ctrlInstance));
     }
+  }
+
+  private getRoutePrefix(controllerPrefix: string): string {
+    let routePrefix;
+
+    if (controllerPrefix.charAt(controllerPrefix.length - 1) === '/') {
+      routePrefix = controllerPrefix.slice(0, controllerPrefix.length - 1);
+    }
+    else {
+      routePrefix = controllerPrefix;
+    }
+
+    routePrefix = routePrefix.charAt(0) === '/' ? routePrefix : '/' + routePrefix;
+
+    return routePrefix;
   }
 }
