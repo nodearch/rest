@@ -1,4 +1,4 @@
-import { logger, proto, ArchApp } from '@nodearch/core';
+import { proto, ArchApp, ILogger } from '@nodearch/core';
 import express from 'express';
 import * as http from 'http';
 import { METADATA_KEY } from './constants';
@@ -13,16 +13,18 @@ export class RestServer {
   private port: number;
   private hostname?: string;
   private server: http.Server;
-  public expressApp: express.Application;
   private archApp: ArchApp;
   private router: express.Router;
   private validationStrategy?: ValidationStrategy;
+  public expressApp: express.Application;
+  private logger: ILogger;
 
   constructor(archApp: ArchApp, validationStrategy?: ValidationStrategy) {
     this.port = 3000;
     this.hostname = 'localhost';
     this.archApp = archApp;
     this.validationStrategy = validationStrategy;
+    this.logger = this.archApp.config.logger;
 
     this.expressApp = express();
     this.router = express.Router();
@@ -42,10 +44,14 @@ export class RestServer {
       });
 
       this.server.on('listening', () => {
-        logger.info(`Server running at: http://${this.hostname}:${this.port}`);
+        this.logger.info(`Server running at: http://${this.hostname}:${this.port}`);
         resolve();
       });
     });
+  }
+
+  close(): void {
+    this.server.close();
   }
 
   public registerRoutes () {
@@ -126,9 +132,5 @@ export class RestServer {
       default:
         this.router.all(routeInfo.path, middlewares, handler.bind(ctrlInstance));
     }
-  }
-
-  get express() {
-    return express;
   }
 }

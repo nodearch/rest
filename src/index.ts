@@ -3,11 +3,10 @@ export * from './decorators';
 export * from './interfaces';
 export * from './types';
 import { HttpMethod } from './enums';
-import { Request, Response } from 'express';
+import express from 'express';
 
 export {
   RestServer,
   HttpMethod,
-  Request,
-  Response
+  express
 };
