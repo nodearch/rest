@@ -6,7 +6,6 @@ import { RouteInfo } from './interfaces';
 import { HttpMethod } from './enums';
 import { validate } from './validation';
 import { ValidationStrategy } from './types/validation-strategy';
-import url from 'url';
 
 
 export class RestServer {
@@ -22,7 +21,7 @@ export class RestServer {
 
   constructor(archApp: ArchApp, validationStrategy?: ValidationStrategy) {
     this.port = 3000;
-    this.hostname = 'localhost';
+    this.hostname = 'http://localhost';
     this.archApp = archApp;
     this.validationStrategy = validationStrategy;
     this.logger = this.archApp.config.logger;
@@ -35,7 +34,7 @@ export class RestServer {
   async start(port: number, hostname?: string): Promise<void> {
     return new Promise((resolve, reject) => {
 
-      this.port === port;
+      this.port = port;
       this.hostname = hostname || this.hostname;
 
       this.server.listen(this.port);
@@ -45,7 +44,7 @@ export class RestServer {
       });
 
       this.server.on('listening', () => {
-        this.logger.info(`Server running at: http://${this.hostname}:${this.port}`);
+        this.logger.info(`Server running at: ${this.hostname}:${this.port}`);
         resolve();
       });
     });
@@ -92,7 +91,7 @@ export class RestServer {
 
         if (routeInfo) {
           this.routerMapping(routeInfo, middlewares, ctrlInstance[ctrlMethod], ctrlInstance);
-          this.logger.info(`[Register HTTP Route] ${routeInfo.method} ${routeInfo.path}`)
+          this.logger.info(`Register HTTP Route - ${routeInfo.method} ${routeInfo.path}`)
         }
       });
     });
