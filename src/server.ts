@@ -1,43 +1,89 @@
-import { proto, ArchApp, ILogger } from '@nodearch/core';
+import { proto, ArchApp, ILogger, AppExtension, IArchApp } from '@nodearch/core';
 import express from 'express';
 import * as http from 'http';
 import { METADATA_KEY } from './constants';
-import { RouteInfo } from './interfaces';
+import { RouteInfo, IConnection } from './interfaces';
 import { HttpMethod } from './enums';
 import { validate } from './validation';
 import { ValidationStrategy } from './types/validation-strategy';
+import { Logger } from './logger';
+import { ExpressSequence, StartExpress, ExpressMiddleware, RegisterRoutes } from './sequence';
 
 
-export class RestServer {
+
+export class RestServer implements AppExtension {
 
   private port: number;
-  private hostname?: string;
+  private hostname: string;
   private server: http.Server;
-  private archApp: ArchApp;
   private router: express.Router;
   private validationStrategy?: ValidationStrategy;
   public expressApp: express.Application;
   private logger: ILogger;
+  private expressSequence: ExpressSequence[];
 
-  constructor(archApp: ArchApp, validationStrategy?: ValidationStrategy) {
-    this.port = 3000;
-    this.hostname = 'http://localhost';
-    this.archApp = archApp;
-    this.validationStrategy = validationStrategy;
-    this.logger = this.archApp.config.logger;
+  constructor(connectionOptions: IConnection, expressSequence: ExpressSequence[]) {
+    this.port = connectionOptions.port;
+    this.hostname = connectionOptions.hostname || 'localhost';
+    this.logger = new Logger();
+    this.expressSequence = expressSequence;
 
     this.expressApp = express();
     this.router = express.Router();
     this.server = http.createServer(this.expressApp);
   }
 
-  async start(port: number, hostname?: string): Promise<void> {
+  async onInit(archApp: IArchApp) {
+    this.logger = archApp.logger;
+  }
+
+  async onStart(archApp: IArchApp) {
+
+    const eRegisterRoutesIndex = this.getRegisterRoutesIndex();
+    const eStartIndex = this.getStartExpressIndex();
+
+    this.registerSequenceMiddlewares(this.expressSequence.slice(0, eRegisterRoutesIndex));
+
+    const controllers = archApp.getControllers();
+    this.registerRoutes(controllers);
+
+    this.registerSequenceMiddlewares(this.expressSequence.slice(eRegisterRoutesIndex + 1, eStartIndex));
+
+    await this.start();
+  }
+
+  private getRegisterRoutesIndex() {
+    const eRegisterRoutesIndex = this.expressSequence.findIndex((x: ExpressSequence) => x instanceof RegisterRoutes);
+    if (eRegisterRoutesIndex > -1) {
+      return eRegisterRoutesIndex;
+    }
+    else {
+      throw new Error('forgot to call >> new RegisterRoutes() in RestServer Sequence');
+    }
+  }
+
+  private getStartExpressIndex() {
+    const eStartIndex = this.expressSequence.findIndex((x: ExpressSequence) => x instanceof StartExpress);
+    if (eStartIndex > -1) {
+      return eStartIndex;
+    }
+    else {
+      throw new Error('forgot to call >> new StartExpress() in RestServer Sequence');
+    }
+  }
+
+  private registerSequenceMiddlewares(expressSequence: ExpressSequence[]) {
+    expressSequence.forEach((seqItem: ExpressSequence) => {
+      if (seqItem instanceof ExpressMiddleware) {
+        this.expressApp.use(...seqItem.args);
+      }
+    });
+  }
+
+  async start(): Promise<void> {
     return new Promise((resolve, reject) => {
 
-      this.port = port;
-      this.hostname = hostname || this.hostname;
-
-      this.server.listen(this.port);
+      this.server.listen(this.port, this.hostname);
 
       this.server.on('error', (err) => {
         reject(err);
@@ -54,9 +100,7 @@ export class RestServer {
     this.server.close();
   }
 
-  public registerRoutes () {
-    const controllers = this.archApp.getControllers();
-
+  public registerRoutes(controllers: Map<any, any>) {
     controllers.forEach((ctrlInstance: any, ctrlDef: Function) => {
       const ctrlMethods = proto.getMethods(ctrlDef);
 
@@ -99,23 +143,23 @@ export class RestServer {
     this.expressApp.use(this.router);
   }
 
-  private getMethodRouteInfo (ctrlInstance: any, ctrlMethod: string): RouteInfo {
+  private getMethodRouteInfo(ctrlInstance: any, ctrlMethod: string): RouteInfo {
     return <RouteInfo>Reflect.getMetadata(METADATA_KEY.ARCH_ROUTE_INFO, ctrlInstance, ctrlMethod);
   }
 
-  private getMethodMiddlewares (ctrlInstance: any, ctrlMethod: string): any[] {
+  private getMethodMiddlewares(ctrlInstance: any, ctrlMethod: string): any[] {
     return Reflect.getMetadata(METADATA_KEY.ARCH_MIDDLEWARE, ctrlInstance, ctrlMethod) || [];
   }
 
-  private getControllerMiddlewares (ctrlInstance: any): any[] {
+  private getControllerMiddlewares(ctrlInstance: any): any[] {
     return Reflect.getMetadata(METADATA_KEY.ARCH_MIDDLEWARE, ctrlInstance) || [];
   }
 
-  private getControllerPrefix (ctrlInstance: any): string | undefined {
+  private getControllerPrefix(ctrlInstance: any): string | undefined {
     return Reflect.getMetadata(METADATA_KEY.ARCH_CONTROLLER_PREFIX, ctrlInstance);
   }
 
-  private getValidationSchema (ctrlInstance: any, ctrlMethod: string): any[] {
+  private getValidationSchema(ctrlInstance: any, ctrlMethod: string): any[] {
     return Reflect.getMetadata(METADATA_KEY.ARCH_VALIDATION_SCHEMA, ctrlInstance, ctrlMethod);
   }
 
