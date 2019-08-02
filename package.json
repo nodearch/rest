@@ -1,6 +1,6 @@
 {
   "name": "@nodearch/rest",
-  "version": "0.1.2",
+  "version": "0.1.6",
   "description": "nodearch rest server",
   "main": "./dist/index.js",
   "scripts": {
@@ -26,6 +26,11 @@
   "engines": {
     "node": ">=8.0.0 <*"
   },
+  "dependencies": {
+    "reflect-metadata": "^0.1.13",
+    "express": "^4.17.1",
+    "@types/express": "^4.17.0"
+  },
   "devDependencies": {
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.7",
@@ -35,13 +40,9 @@
     "nyc": "^14.1.1",
     "reflect-metadata": "^0.1.13",
     "ts-node": "^8.3.0",
-    "typescript": "^3.5.2",
-    "@types/express": "^4.17.0",
-    "express": "^4.17.1"
+    "typescript": "^3.5.2"
   },
   "peerDependencies": {
-    "reflect-metadata": "0.x",
-    "@nodearch/core": "0.x",
-    "express": "4.x"
+    "@nodearch/core": "0.x"
   }
 }
