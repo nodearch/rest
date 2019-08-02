@@ -1,20 +1,17 @@
-import { proto, ArchApp, ILogger, AppExtension, IArchApp } from '@nodearch/core';
+import { proto, ArchApp, ILogger, IAppExtension, IArchApp, Logger } from '@nodearch/core';
 import express from 'express';
 import * as http from 'http';
 import { METADATA_KEY } from './constants';
-import { RouteInfo, IConnection } from './interfaces';
+import { RouteInfo } from './interfaces';
 import { HttpMethod } from './enums';
 import { validate } from './validation';
 import { ValidationStrategy } from './types/validation-strategy';
-import { Logger } from './logger';
-import { ExpressSequence, StartExpress, ExpressMiddleware, RegisterRoutes } from './sequence';
+import { Sequence, ExpressSequence, StartExpress, ExpressMiddleware, RegisterRoutes } from './sequence';
 
 
 
-export class RestServer implements AppExtension {
+export class RestServer implements IAppExtension {
 
-  private port: number;
-  private hostname: string;
   private server: http.Server;
   private router: express.Router;
   private validationStrategy?: ValidationStrategy;
@@ -22,11 +19,9 @@ export class RestServer implements AppExtension {
   private logger: ILogger;
   private expressSequence: ExpressSequence[];
 
-  constructor(connectionOptions: IConnection, expressSequence: ExpressSequence[]) {
-    this.port = connectionOptions.port;
-    this.hostname = connectionOptions.hostname || 'localhost';
+  constructor(sequence: Sequence) {
     this.logger = new Logger();
-    this.expressSequence = expressSequence;
+    this.expressSequence = sequence.expressSequence;
 
     this.expressApp = express();
     this.router = express.Router();
@@ -38,7 +33,6 @@ export class RestServer implements AppExtension {
   }
 
   async onStart(archApp: IArchApp) {
-
     const eRegisterRoutesIndex = this.getRegisterRoutesIndex();
     const eStartIndex = this.getStartExpressIndex();
 
@@ -49,7 +43,10 @@ export class RestServer implements AppExtension {
 
     this.registerSequenceMiddlewares(this.expressSequence.slice(eRegisterRoutesIndex + 1, eStartIndex));
 
-    await this.start();
+    const port = archApp.config.get('rest.port');
+    const hostname = archApp.config.get('rest.hostname');
+
+    await this.start(port, hostname);
   }
 
   private getRegisterRoutesIndex() {
@@ -80,17 +77,17 @@ export class RestServer implements AppExtension {
     });
   }
 
-  async start(): Promise<void> {
+  async start(port: number, hostname: string): Promise<void> {
     return new Promise((resolve, reject) => {
 
-      this.server.listen(this.port, this.hostname);
+      this.server.listen(port, hostname);
 
       this.server.on('error', (err) => {
         reject(err);
       });
 
       this.server.on('listening', () => {
-        this.logger.info(`Server running at: ${this.hostname}:${this.port}`);
+        this.logger.info(`Server running at: ${hostname}:${port}`);
         resolve();
       });
     });
