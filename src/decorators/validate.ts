@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { METADATA_KEY } from '../constants';
 
 

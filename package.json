@@ -1,13 +1,13 @@
 {
   "name": "@nodearch/rest",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "nodearch rest server",
   "main": "./dist/index.js",
   "scripts": {
     "test": "mocha -r ts-node/register tests/**/*.spec.ts",
     "test-cov": "nyc -r lcov -e .ts -x \"*.test.ts\" mocha -r ts-node/register tests/**/*.spec.ts && nyc report",
     "build": "rm -rf ./dist && tsc",
-    "release": "npm publish --access public"
+    "release": "npm run build && npm publish --access public"
   },
   "repository": {
     "type": "git",
@@ -38,5 +38,10 @@
     "typescript": "^3.5.2",
     "@types/express": "^4.17.0",
     "express": "^4.17.1"
+  },
+  "peerDependencies": {
+    "reflect-metadata": "0.x",
+    "@nodearch/core": "0.x",
+    "express": "4.x"
   }
 }

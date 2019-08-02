@@ -1,4 +1,4 @@
-import { proto, ArchApp, ILogger, IAppExtension, IArchApp, Logger } from '@nodearch/core';
+import { proto, ILogger, IAppExtension, IArchApp, Logger } from '@nodearch/core';
 import express from 'express';
 import * as http from 'http';
 import { METADATA_KEY } from './constants';

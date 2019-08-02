@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { Request, Response } from 'express';
 import { METADATA_KEY } from '../constants';
 

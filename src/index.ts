@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 import { RestServer } from './server';
 export * from './decorators';
 export * from './interfaces';

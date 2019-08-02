@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { HttpMethod } from './enums';
 import { RouteInfo } from './interfaces';
 
