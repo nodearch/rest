@@ -43,7 +43,6 @@ export class RestServer implements IAppExtension {
     this.hostname = archApp.config.get('rest.hostname') || this.hostname;
     this.joiValidationOptions = archApp.config.get<Joi.ValidationOptions>('rest.joiValidationOptions');
 
-    console.log('this.joiValidationOptions', this.joiValidationOptions);
     const eRegisterRoutesIndex = this.getRegisterRoutesIndex();
     const eStartIndex = this.getStartExpressIndex();
 
