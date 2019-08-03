@@ -5,8 +5,8 @@ import { METADATA_KEY } from './constants';
 import { RouteInfo } from './interfaces';
 import { HttpMethod } from './enums';
 import { validate } from './validation';
-import { ValidationStrategy } from './types/validation-strategy';
 import { Sequence, ExpressSequence, StartExpress, ExpressMiddleware, RegisterRoutes } from './sequence';
+import Joi from '@hapi/joi';
 
 
 
@@ -14,12 +14,16 @@ export class RestServer implements IAppExtension {
 
   private server: http.Server;
   private router: express.Router;
-  private validationStrategy?: ValidationStrategy;
   public expressApp: express.Application;
   private logger: ILogger;
   private expressSequence: ExpressSequence[];
+  private port: number;
+  private hostname: string;
+  private joiValidationOptions?: Joi.ValidationOptions;
 
   constructor(sequence: Sequence) {
+    this.port = 3000;
+    this.hostname = 'localhost';
     this.logger = new Logger();
     this.expressSequence = sequence.expressSequence;
 
@@ -33,6 +37,13 @@ export class RestServer implements IAppExtension {
   }
 
   async onStart(archApp: IArchApp) {
+
+    // set config
+    this.port = archApp.config.get('rest.port') || this.port;
+    this.hostname = archApp.config.get('rest.hostname') || this.hostname;
+    this.joiValidationOptions = archApp.config.get<Joi.ValidationOptions>('rest.joiValidationOptions');
+
+    console.log('this.joiValidationOptions', this.joiValidationOptions);
     const eRegisterRoutesIndex = this.getRegisterRoutesIndex();
     const eStartIndex = this.getStartExpressIndex();
 
@@ -43,10 +54,7 @@ export class RestServer implements IAppExtension {
 
     this.registerSequenceMiddlewares(this.expressSequence.slice(eRegisterRoutesIndex + 1, eStartIndex));
 
-    const port = archApp.config.get('rest.port');
-    const hostname = archApp.config.get('rest.hostname');
-
-    await this.start(port, hostname);
+    await this.start();
   }
 
   private getRegisterRoutesIndex() {
@@ -77,17 +85,17 @@ export class RestServer implements IAppExtension {
     });
   }
 
-  async start(port: number, hostname: string): Promise<void> {
+  async start(): Promise<void> {
     return new Promise((resolve, reject) => {
 
-      this.server.listen(port, hostname);
+      this.server.listen(this.port, this.hostname);
 
       this.server.on('error', (err) => {
         reject(err);
       });
 
       this.server.on('listening', () => {
-        this.logger.info(`Server running at: ${hostname}:${port}`);
+        this.logger.info(`Server running at: ${this.hostname}:${this.port}`);
         resolve();
       });
     });
@@ -122,12 +130,7 @@ export class RestServer implements IAppExtension {
         const middlewares = [...controllerMiddlewares, ...methodMiddlewares];
 
         if (validationSchema) {
-          if (this.validationStrategy) {
-            middlewares.push(validate(this.validationStrategy, validationSchema));
-          }
-          else {
-            throw new Error('cannot use @Validate without defining Validation Strategy!');
-          }
+          middlewares.push(validate(validationSchema, this.joiValidationOptions));
         }
 
         if (routeInfo) {

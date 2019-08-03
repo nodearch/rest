@@ -7,9 +7,11 @@ export * from './types';
 export * from './sequence';
 import { HttpMethod } from './enums';
 import express from 'express';
+import Joi from '@hapi/joi';
 
 export {
   RestServer,
   HttpMethod,
-  express
+  express,
+  Joi
 };

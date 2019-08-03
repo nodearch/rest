@@ -1,11 +1,19 @@
 import { Request, Response } from 'express';
 import { RequestData } from './interfaces';
-import { ValidationStrategy } from './types/validation-strategy';
+import Joi from '@hapi/joi';
 
-export function validate (validationStrategy: ValidationStrategy, validationSchema: any) {
+export function validate(validationSchema: any, validationOptions?: Joi.ValidationOptions) {
   return function (req: Request, res: Response, next: any) {
 
     const dataToValidate: RequestData = {};
+
+    if (req.params) {
+      Object.assign(dataToValidate, { params: req.params });
+    }
+
+    if (req.cookies) {
+      Object.assign(dataToValidate, { cookies: req.cookies });
+    }
 
     if (req.headers) {
       Object.assign(dataToValidate, { headers: req.headers });
@@ -19,13 +27,13 @@ export function validate (validationStrategy: ValidationStrategy, validationSche
       Object.assign(dataToValidate, { body: req.body });
     }
 
-    validationStrategy(dataToValidate, validationSchema, function (errors?: any) {
-      if (!errors) {
-        next();
-      }
-      else {
-        res.status(400).json(errors);
-      }
-    });
+    const result = Joi.validate(dataToValidate, validationSchema, validationOptions);
+
+    if (result.error) {
+      res.status(400).json(result.error.details);
+    }
+    else {
+      next();
+    }
   }
 }
