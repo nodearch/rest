@@ -1,4 +1,4 @@
-import { proto, ILogger, IAppExtension, IArchApp, Logger } from '@nodearch/core';
+import { proto, ILogger, IAppExtension, IArchApp } from '@nodearch/core';
 import express from 'express';
 import * as http from 'http';
 import { METADATA_KEY } from './constants';
@@ -15,17 +15,17 @@ export class RestServer implements IAppExtension {
   private server: http.Server;
   private router: express.Router;
   public expressApp: express.Application;
-  private logger: ILogger;
+  private logger?: ILogger;
   private expressSequence: ExpressSequence[];
   private port: number;
   private hostname: string;
   private joiValidationOptions?: Joi.ValidationOptions;
 
-  constructor(sequence: Sequence) {
-    this.port = 3000;
-    this.hostname = 'localhost';
-    this.logger = new Logger();
-    this.expressSequence = sequence.expressSequence;
+  constructor(options: { config: { port: number, hostname: string, joiValidationOptions?: Joi.ValidationOptions }, sequence: Sequence }) {
+    this.expressSequence = options.sequence.expressSequence;
+    this.port = options.config.port;
+    this.hostname = options.config.hostname;
+    this.joiValidationOptions = options.config.joiValidationOptions;
 
     this.expressApp = express();
     this.router = express.Router();
@@ -37,18 +37,16 @@ export class RestServer implements IAppExtension {
   }
 
   async onStart(archApp: IArchApp) {
+    const controllers = archApp.getControllers();
+    await this.init(controllers);
+  }
 
-    // set config
-    this.port = archApp.config.get('rest.port') || this.port;
-    this.hostname = archApp.config.get('rest.hostname') || this.hostname;
-    this.joiValidationOptions = archApp.config.get<Joi.ValidationOptions>('rest.joiValidationOptions');
-
+  public async init(controllers: Map<any, any>) {
     const eRegisterRoutesIndex = this.getRegisterRoutesIndex();
     const eStartIndex = this.getStartExpressIndex();
 
     this.registerSequenceMiddlewares(this.expressSequence.slice(0, eRegisterRoutesIndex));
 
-    const controllers = archApp.getControllers();
     this.registerRoutes(controllers);
 
     this.registerSequenceMiddlewares(this.expressSequence.slice(eRegisterRoutesIndex + 1, eStartIndex));
@@ -94,7 +92,11 @@ export class RestServer implements IAppExtension {
       });
 
       this.server.on('listening', () => {
-        this.logger.info(`Server running at: ${this.hostname}:${this.port}`);
+
+        if (this.logger) {
+          this.logger.info(`Server running at: ${this.hostname}:${this.port}`);
+        }
+
         resolve();
       });
     });
@@ -134,7 +136,10 @@ export class RestServer implements IAppExtension {
 
         if (routeInfo) {
           this.routerMapping(routeInfo, middlewares, ctrlInstance[ctrlMethod], ctrlInstance);
-          this.logger.info(`Register HTTP Route - ${routeInfo.method} ${routeInfo.path}`)
+
+          if (this.logger) {
+            this.logger.info(`Register HTTP Route - ${routeInfo.method} ${routeInfo.path}`);
+          }
         }
       });
     });

@@ -1,6 +1,6 @@
 {
   "name": "@nodearch/rest",
-  "version": "0.1.8",
+  "version": "0.2.8",
   "description": "nodearch rest server",
   "main": "./dist/index.js",
   "scripts": {
@@ -34,7 +34,7 @@
     "reflect-metadata": "^0.1.13"
   },
   "devDependencies": {
-    "@nodearch/core": "^0.3.5",
+    "@nodearch/core": "^0.4.5",
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.7",
     "@types/node": "^12.0.8",
