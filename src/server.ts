@@ -7,9 +7,7 @@ import { HttpMethod } from './enums';
 import { validate } from './validation';
 import { Sequence, ExpressSequence, StartExpress, ExpressMiddleware, RegisterRoutes } from './sequence';
 import Joi from '@hapi/joi';
-import { common } from './metadata';
-
-
+import * as metadata from './metadata';
 
 export class RestServer implements IAppExtension {
 
@@ -150,19 +148,19 @@ export class RestServer implements IAppExtension {
   }
 
   private getMethodRouteInfo(ctrlInstance: any, ctrlMethod: string): RouteInfo {
-    return <RouteInfo>common.getMethodMetadata(METADATA_KEY.ARCH_ROUTE_INFO, ctrlInstance, ctrlMethod);
+    return <RouteInfo>metadata.common.getMethodMetadata(METADATA_KEY.ROUTE_INFO, ctrlInstance, ctrlMethod);
   }
 
   private getMethodMiddlewares(ctrlInstance: any, ctrlMethod: string): any[] {
-    return common.getMethodMetadata(METADATA_KEY.ARCH_MIDDLEWARE, ctrlInstance, ctrlMethod) || [];
+    return metadata.common.getMethodMetadata(METADATA_KEY.MIDDLEWARE, ctrlInstance, ctrlMethod) || [];
   }
 
   private getControllerMiddlewares(ctrlInstance: any): any[] {
-    return common.getClassMetadata(METADATA_KEY.ARCH_MIDDLEWARE, ctrlInstance) || [];
+    return metadata.common.getClassMetadata(METADATA_KEY.MIDDLEWARE, ctrlInstance) || [];
   }
 
   private getValidationSchema(ctrlInstance: any, ctrlMethod: string): any[] {
-    return common.getMethodMetadata(METADATA_KEY.ARCH_VALIDATION_SCHEMA, ctrlInstance, ctrlMethod);
+    return metadata.common.getMethodMetadata(METADATA_KEY.VALIDATION_SCHEMA, ctrlInstance, ctrlMethod);
   }
 
   private routerMapping(routeInfo: RouteInfo, middlewares: any[], handler: any, ctrlInstance: any) {

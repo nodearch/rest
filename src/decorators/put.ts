@@ -2,7 +2,7 @@ import { METADATA_KEY } from '../constants';
 import { HttpMethod } from '../enums';
 import { RouteInfo } from '../interfaces';
 import { getRouteInfo } from '../routing';
-import { common } from '../metadata';
+import * as metadata from '../metadata';
 
 
 /**
@@ -19,7 +19,7 @@ export function Put (path?: string): MethodDecorator {
   return <MethodDecorator>function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
 
     const routeInfo: RouteInfo = getRouteInfo(HttpMethod.PUT, path);
-    common.setMethodMetadata(METADATA_KEY.ARCH_ROUTE_INFO, target, propertyKey, routeInfo);
+    metadata.common.setMethodMetadata(METADATA_KEY.ROUTE_INFO, target, propertyKey, routeInfo);
     
     return descriptor;
   }
