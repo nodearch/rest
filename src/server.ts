@@ -1,4 +1,4 @@
-import { proto, ILogger, IAppExtension, IArchApp } from '@nodearch/core';
+import { proto, ILogger, IAppExtension, IArchApp, ControllerInfo } from '@nodearch/core';
 import express from 'express';
 import * as http from 'http';
 import { METADATA_KEY } from './constants';
@@ -7,8 +7,7 @@ import { HttpMethod } from './enums';
 import { validate } from './validation';
 import { Sequence, ExpressSequence, StartExpress, ExpressMiddleware, RegisterRoutes } from './sequence';
 import Joi from '@hapi/joi';
-
-
+import * as metadata from './metadata';
 
 export class RestServer implements IAppExtension {
 
@@ -37,11 +36,11 @@ export class RestServer implements IAppExtension {
   }
 
   async onStart(archApp: IArchApp) {
-    const controllers = archApp.getControllers();
+    const controllers: ControllerInfo[] = archApp.getControllers();
     await this.init(controllers);
   }
 
-  public async init(controllers: Map<any, any>) {
+  public async init(controllers: ControllerInfo[]) {
     const eRegisterRoutesIndex = this.getRegisterRoutesIndex();
     const eStartIndex = this.getStartExpressIndex();
 
@@ -106,12 +105,13 @@ export class RestServer implements IAppExtension {
     this.server.close();
   }
 
-  public registerRoutes(controllers: Map<any, any>) {
-    controllers.forEach((ctrlInstance: any, ctrlDef: Function) => {
-      const ctrlMethods = proto.getMethods(ctrlDef);
+  public registerRoutes(controllers: ControllerInfo[]) {
+  
+    controllers.forEach((controller: ControllerInfo) => {
+      const ctrlMethods = proto.getMethods(controller.classDef);
 
-      const controllerMiddlewares = this.getControllerMiddlewares(ctrlDef);
-      const controllerPrefix = this.getControllerPrefix(ctrlDef);
+      const controllerMiddlewares = this.getControllerMiddlewares(controller.classDef);
+      const controllerPrefix = controller.prefix;
       let routePrefix: string;
 
       if (controllerPrefix) {
@@ -119,14 +119,14 @@ export class RestServer implements IAppExtension {
       }
 
       ctrlMethods.forEach((ctrlMethod: any) => {
-        const routeInfo = this.getMethodRouteInfo(ctrlInstance, ctrlMethod);
+        const routeInfo = this.getMethodRouteInfo(controller.classInstance, ctrlMethod);
 
         if (routePrefix) {
           routeInfo.path = routePrefix + routeInfo.path;
         }
 
-        const methodMiddlewares = this.getMethodMiddlewares(ctrlInstance, ctrlMethod);
-        const validationSchema = this.getValidationSchema(ctrlInstance, ctrlMethod);
+        const methodMiddlewares = this.getMethodMiddlewares(controller.classInstance, ctrlMethod);
+        const validationSchema = this.getValidationSchema(controller.classInstance, ctrlMethod);
 
         const middlewares = [...controllerMiddlewares, ...methodMiddlewares];
 
@@ -135,7 +135,7 @@ export class RestServer implements IAppExtension {
         }
 
         if (routeInfo) {
-          this.routerMapping(routeInfo, middlewares, ctrlInstance[ctrlMethod], ctrlInstance);
+          this.routerMapping(routeInfo, middlewares, controller.classInstance[ctrlMethod], controller.classInstance);
 
           if (this.logger) {
             this.logger.info(`Register HTTP Route - ${routeInfo.method} ${routeInfo.path}`);
@@ -148,23 +148,19 @@ export class RestServer implements IAppExtension {
   }
 
   private getMethodRouteInfo(ctrlInstance: any, ctrlMethod: string): RouteInfo {
-    return <RouteInfo>Reflect.getMetadata(METADATA_KEY.ARCH_ROUTE_INFO, ctrlInstance, ctrlMethod);
+    return <RouteInfo>metadata.common.getMethodMetadata(METADATA_KEY.ROUTE_INFO, ctrlInstance, ctrlMethod);
   }
 
   private getMethodMiddlewares(ctrlInstance: any, ctrlMethod: string): any[] {
-    return Reflect.getMetadata(METADATA_KEY.ARCH_MIDDLEWARE, ctrlInstance, ctrlMethod) || [];
+    return metadata.common.getMethodMetadata(METADATA_KEY.MIDDLEWARE, ctrlInstance, ctrlMethod) || [];
   }
 
   private getControllerMiddlewares(ctrlInstance: any): any[] {
-    return Reflect.getMetadata(METADATA_KEY.ARCH_MIDDLEWARE, ctrlInstance) || [];
-  }
-
-  private getControllerPrefix(ctrlInstance: any): string | undefined {
-    return Reflect.getMetadata(METADATA_KEY.ARCH_CONTROLLER_PREFIX, ctrlInstance);
+    return metadata.common.getClassMetadata(METADATA_KEY.MIDDLEWARE, ctrlInstance) || [];
   }
 
   private getValidationSchema(ctrlInstance: any, ctrlMethod: string): any[] {
-    return Reflect.getMetadata(METADATA_KEY.ARCH_VALIDATION_SCHEMA, ctrlInstance, ctrlMethod);
+    return metadata.common.getMethodMetadata(METADATA_KEY.VALIDATION_SCHEMA, ctrlInstance, ctrlMethod);
   }
 
   private routerMapping(routeInfo: RouteInfo, middlewares: any[], handler: any, ctrlInstance: any) {
