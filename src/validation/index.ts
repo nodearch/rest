@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { RequestData } from './interfaces';
+import { RequestData } from '../interfaces';
 import Joi from '@hapi/joi';
 
-export function validate(validationSchema: any, validationOptions?: Joi.ValidationOptions) {
+export function getValidationMiddleware(validationSchema: any, validationOptions?: Joi.ValidationOptions) {
   return function (req: Request, res: Response, next: any) {
 
     const dataToValidate: RequestData = {};

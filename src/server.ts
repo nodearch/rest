@@ -1,13 +1,10 @@
-import { proto, ILogger, IAppExtension, IArchApp, ControllerInfo } from '@nodearch/core';
+import { ILogger, IAppExtension, IArchApp, ControllerInfo } from '@nodearch/core';
 import express from 'express';
 import * as http from 'http';
-import { METADATA_KEY } from './constants';
-import { RouteInfo } from './interfaces';
 import { HttpMethod } from './enums';
-import { validate } from './validation';
 import { Sequence, ExpressSequence, StartExpress, ExpressMiddleware, RegisterRoutes } from './sequence';
 import Joi from '@hapi/joi';
-import * as metadata from './metadata';
+import { RouteHandler, RouteInfo } from './route';
 
 export class RestServer implements IAppExtension {
 
@@ -107,105 +104,51 @@ export class RestServer implements IAppExtension {
 
   public registerRoutes(controllers: ControllerInfo[]) {
   
-    controllers.forEach((controller: ControllerInfo) => {
-      const ctrlMethods = proto.getMethods(controller.classDef);
+    const routeHandler = new RouteHandler(controllers, { joiValidationOptions: this.joiValidationOptions });
 
-      const controllerMiddlewares = this.getControllerMiddlewares(controller.classDef);
-      const controllerPrefix = controller.prefix;
-      let routePrefix: string;
+    const routes: RouteInfo[] = routeHandler.getRoutes();
 
-      if (controllerPrefix) {
-        routePrefix = this.getRoutePrefix(controllerPrefix);
+    routes.forEach((routeInfo: RouteInfo) => {
+      
+      this.routerMapping(routeInfo);
+
+      if (this.logger) {
+        this.logger.info(`Register HTTP Route - ${routeInfo.method} ${routeInfo.path}`);
       }
 
-      ctrlMethods.forEach((ctrlMethod: any) => {
-        const routeInfo = this.getMethodRouteInfo(controller.classInstance, ctrlMethod);
-
-        if (routePrefix) {
-          routeInfo.path = routePrefix + routeInfo.path;
-        }
-
-        const methodMiddlewares = this.getMethodMiddlewares(controller.classInstance, ctrlMethod);
-        const validationSchema = this.getValidationSchema(controller.classInstance, ctrlMethod);
-
-        const middlewares = [...controllerMiddlewares, ...methodMiddlewares];
-
-        if (validationSchema) {
-          middlewares.push(validate(validationSchema, this.joiValidationOptions));
-        }
-
-        if (routeInfo) {
-          this.routerMapping(routeInfo, middlewares, controller.classInstance[ctrlMethod], controller.classInstance);
-
-          if (this.logger) {
-            this.logger.info(`Register HTTP Route - ${routeInfo.method} ${routeInfo.path}`);
-          }
-        }
-      });
     });
 
     this.expressApp.use(this.router);
   }
 
-  private getMethodRouteInfo(ctrlInstance: any, ctrlMethod: string): RouteInfo {
-    return <RouteInfo>metadata.common.getMethodMetadata(METADATA_KEY.ROUTE_INFO, ctrlInstance, ctrlMethod);
-  }
-
-  private getMethodMiddlewares(ctrlInstance: any, ctrlMethod: string): any[] {
-    return metadata.common.getMethodMetadata(METADATA_KEY.MIDDLEWARE, ctrlInstance, ctrlMethod) || [];
-  }
-
-  private getControllerMiddlewares(ctrlInstance: any): any[] {
-    return metadata.common.getClassMetadata(METADATA_KEY.MIDDLEWARE, ctrlInstance) || [];
-  }
-
-  private getValidationSchema(ctrlInstance: any, ctrlMethod: string): any[] {
-    return metadata.common.getMethodMetadata(METADATA_KEY.VALIDATION_SCHEMA, ctrlInstance, ctrlMethod);
-  }
-
-  private routerMapping(routeInfo: RouteInfo, middlewares: any[], handler: any, ctrlInstance: any) {
+  private routerMapping(routeInfo: RouteInfo) {
     switch (routeInfo.method) {
       case HttpMethod.GET:
-        this.router.get(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.get(routeInfo.path, routeInfo.middlewares);
         break;
       case HttpMethod.POST:
-        this.router.post(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.post(routeInfo.path, routeInfo.middlewares);
         break;
       case HttpMethod.PUT:
-        this.router.put(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.put(routeInfo.path, routeInfo.middlewares);
         break;
       case HttpMethod.DELETE:
-        this.router.delete(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.delete(routeInfo.path, routeInfo.middlewares);
         break;
       case HttpMethod.HEAD:
-        this.router.head(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.head(routeInfo.path, routeInfo.middlewares);
         break;
       case HttpMethod.PATCH:
-        this.router.patch(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.patch(routeInfo.path, routeInfo.middlewares);
         break;
       case HttpMethod.OPTIONS:
-        this.router.options(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.options(routeInfo.path, routeInfo.middlewares);
         break;
       case HttpMethod.ALL:
-        this.router.all(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.all(routeInfo.path, routeInfo.middlewares);
         break;
       default:
-        this.router.all(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.all(routeInfo.path, routeInfo.middlewares);
     }
-  }
-
-  private getRoutePrefix(controllerPrefix: string): string {
-    let routePrefix;
-
-    if (controllerPrefix.charAt(controllerPrefix.length - 1) === '/') {
-      routePrefix = controllerPrefix.slice(0, controllerPrefix.length - 1);
-    }
-    else {
-      routePrefix = controllerPrefix;
-    }
-
-    routePrefix = routePrefix.charAt(0) === '/' ? routePrefix : '/' + routePrefix;
-
-    return routePrefix;
   }
 }
