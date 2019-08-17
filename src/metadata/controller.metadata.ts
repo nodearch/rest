@@ -53,6 +53,6 @@ export function getMethodValidationSchema(controllerInstance: any, methodName: s
   return getMethodMetadata(METADATA_KEY.VALIDATION_SCHEMA, controllerInstance, methodName);
 }
 
-export function setMethodValidationSchema(controllerInstance: any, methodName: string, schema: any) {
-  setMethodMetadata(METADATA_KEY.VALIDATION_SCHEMA, controllerInstance, methodName, schema);
+export function setMethodValidationSchema(controllerDef: any, methodName: string, schema: any) {
+  setMethodMetadata(METADATA_KEY.VALIDATION_SCHEMA, controllerDef, methodName, schema);
 }

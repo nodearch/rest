@@ -32,6 +32,4 @@ export class RouteInfo {
 
     this.middlewares.push(routeHandlerMethod);
   }
-
-
 }
