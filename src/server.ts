@@ -1,30 +1,30 @@
 import { ILogger, IAppExtension, IArchApp, ControllerInfo } from '@nodearch/core';
 import express from 'express';
 import * as http from 'http';
-import { HttpMethod } from './enums';
 import { Sequence, ExpressSequence, StartExpress, ExpressMiddleware, RegisterRoutes } from './sequence';
 import Joi from '@hapi/joi';
 import { RouteHandler, RouteInfo } from './route';
+import { RouterFactory } from './router';
+import { Logger } from './logger';
 
 export class RestServer implements IAppExtension {
 
   private server: http.Server;
-  private router: express.Router;
   public expressApp: express.Application;
-  private logger?: ILogger;
+  private logger: ILogger;
   private expressSequence: ExpressSequence[];
   private port: number;
   private hostname: string;
   private joiValidationOptions?: Joi.ValidationOptions;
 
   constructor(options: { config: { port: number, hostname: string, joiValidationOptions?: Joi.ValidationOptions }, sequence: Sequence }) {
+    this.logger = new Logger();
     this.expressSequence = options.sequence.expressSequence;
     this.port = options.config.port;
     this.hostname = options.config.hostname;
     this.joiValidationOptions = options.config.joiValidationOptions;
 
     this.expressApp = express();
-    this.router = express.Router();
     this.server = http.createServer(this.expressApp);
   }
 
@@ -88,11 +88,7 @@ export class RestServer implements IAppExtension {
       });
 
       this.server.on('listening', () => {
-
-        if (this.logger) {
-          this.logger.info(`Server running at: ${this.hostname}:${this.port}`);
-        }
-
+        this.logger.info(`Server running at: ${this.hostname}:${this.port}`);
         resolve();
       });
     });
@@ -103,52 +99,12 @@ export class RestServer implements IAppExtension {
   }
 
   public registerRoutes(controllers: ControllerInfo[]) {
-  
     const routeHandler = new RouteHandler(controllers, { joiValidationOptions: this.joiValidationOptions });
 
     const routes: RouteInfo[] = routeHandler.getRoutes();
 
-    routes.forEach((routeInfo: RouteInfo) => {
-      
-      this.routerMapping(routeInfo);
+    const routerFactory = new RouterFactory(routes, this.logger);
 
-      if (this.logger) {
-        this.logger.info(`Register HTTP Route - ${routeInfo.method} ${routeInfo.path}`);
-      }
-
-    });
-
-    this.expressApp.use(this.router);
-  }
-
-  private routerMapping(routeInfo: RouteInfo) {
-    switch (routeInfo.method) {
-      case HttpMethod.GET:
-        this.router.get(routeInfo.path, routeInfo.middlewares);
-        break;
-      case HttpMethod.POST:
-        this.router.post(routeInfo.path, routeInfo.middlewares);
-        break;
-      case HttpMethod.PUT:
-        this.router.put(routeInfo.path, routeInfo.middlewares);
-        break;
-      case HttpMethod.DELETE:
-        this.router.delete(routeInfo.path, routeInfo.middlewares);
-        break;
-      case HttpMethod.HEAD:
-        this.router.head(routeInfo.path, routeInfo.middlewares);
-        break;
-      case HttpMethod.PATCH:
-        this.router.patch(routeInfo.path, routeInfo.middlewares);
-        break;
-      case HttpMethod.OPTIONS:
-        this.router.options(routeInfo.path, routeInfo.middlewares);
-        break;
-      case HttpMethod.ALL:
-        this.router.all(routeInfo.path, routeInfo.middlewares);
-        break;
-      default:
-        this.router.all(routeInfo.path, routeInfo.middlewares);
-    }
+    this.expressApp.use(routerFactory.router);
   }
 }
