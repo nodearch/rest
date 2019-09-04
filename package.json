@@ -4,9 +4,9 @@
   "description": "nodearch rest server",
   "main": "./dist/index.js",
   "scripts": {
-    "test": "mocha -r ts-node/register tests/**/*.spec.ts",
-    "test-cov": "nyc -r lcov -e .ts -x \"*.test.ts\" mocha -r ts-node/register tests/**/*.spec.ts && nyc report",
-    "build": "rm -rf ./dist && tsc",
+    "test": "mocha",
+    "test-cov": "nyc mocha",
+    "build": "rm -rf ./dist && tsc -p tsconfig.build.json",
     "release": "npm run build && npm publish --access public"
   },
   "repository": {
