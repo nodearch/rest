@@ -1,4 +1,4 @@
-import { GuardInfo, IGuard } from "@nodearch/core";
+import { GuardInfo, IGuard } from '@nodearch/core';
 import * as metadata from '../metadata';
 
 export function getGuardsMiddleware(guards: GuardInfo[]): any[] {
@@ -7,7 +7,7 @@ export function getGuardsMiddleware(guards: GuardInfo[]): any[] {
   guards.forEach((guard: GuardInfo) => {
     const isAuthGuard = metadata.guard.getAuthGuard(guard.classDef);
 
-    if (isAuthGuard) {
+    if (isAuthGuard && guard.classInstance) {
       const guardInstance: IGuard = guard.classInstance;
       guardsMiddleware.push(guardInstance.guard);
     }

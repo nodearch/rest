@@ -1,6 +1,5 @@
 import { METADATA_PREFIX } from '../constants';
 
-
 export function getClassMetadata<T = any>(key: string, target: any): T {
   return Reflect.getMetadata(METADATA_PREFIX + key, target);
 }

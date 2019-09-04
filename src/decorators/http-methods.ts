@@ -1,7 +1,6 @@
 import { HttpMethod } from '../enums';
 import * as metadata from '../metadata';
 
-
 /**
  * Method Decorator to route HTTP GET requests to the specified path.
  * @param path
@@ -12,14 +11,14 @@ import * as metadata from '../metadata';
  *    - An array of combinations of any of the above.
  *    - examples: https://expressjs.com/en/4x/api.html#path-examples.
  */
-export function Get (path?: string): MethodDecorator {
-  return <MethodDecorator>function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function Get(path?: string): MethodDecorator {
+  return <MethodDecorator> function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
 
     metadata.controller.setMethodHTTPMethod(target, propertyKey, HttpMethod.GET);
     metadata.controller.setMethodHTTPPath(target, propertyKey, getPath(path));
 
     return descriptor;
-  }
+  };
 }
 
 /**
@@ -32,14 +31,14 @@ export function Get (path?: string): MethodDecorator {
  *    - An array of combinations of any of the above.
  *    - examples: https://expressjs.com/en/4x/api.html#path-examples.
  */
-export function Head (path?: string): MethodDecorator {
-  return <MethodDecorator>function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function Head(path?: string): MethodDecorator {
+  return <MethodDecorator> function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
 
     metadata.controller.setMethodHTTPMethod(target, propertyKey, HttpMethod.HEAD);
     metadata.controller.setMethodHTTPPath(target, propertyKey, getPath(path));
 
     return descriptor;
-  }
+  };
 }
 
 /**
@@ -52,14 +51,14 @@ export function Head (path?: string): MethodDecorator {
  *    - An array of combinations of any of the above.
  *    - examples: https://expressjs.com/en/4x/api.html#path-examples.
  */
-export function Post (path?: string): MethodDecorator {
-  return <MethodDecorator>function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function Post(path?: string): MethodDecorator {
+  return <MethodDecorator> function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
 
     metadata.controller.setMethodHTTPMethod(target, propertyKey, HttpMethod.POST);
     metadata.controller.setMethodHTTPPath(target, propertyKey, getPath(path));
-    
+
     return descriptor;
-  }
+  };
 }
 
 /**
@@ -72,14 +71,14 @@ export function Post (path?: string): MethodDecorator {
  *    - An array of combinations of any of the above.
  *    - examples: https://expressjs.com/en/4x/api.html#path-examples.
  */
-export function Put (path?: string): MethodDecorator {
-  return <MethodDecorator>function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function Put(path?: string): MethodDecorator {
+  return <MethodDecorator> function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
 
     metadata.controller.setMethodHTTPMethod(target, propertyKey, HttpMethod.PUT);
     metadata.controller.setMethodHTTPPath(target, propertyKey, getPath(path));
-    
+
     return descriptor;
-  }
+  };
 }
 
 /**
@@ -92,14 +91,14 @@ export function Put (path?: string): MethodDecorator {
  *    - An array of combinations of any of the above.
  *    - examples: https://expressjs.com/en/4x/api.html#path-examples.
  */
-export function Patch (path?: string): MethodDecorator {
-  return <MethodDecorator>function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function Patch(path?: string): MethodDecorator {
+  return <MethodDecorator> function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
 
     metadata.controller.setMethodHTTPMethod(target, propertyKey, HttpMethod.PATCH);
     metadata.controller.setMethodHTTPPath(target, propertyKey, getPath(path));
 
     return descriptor;
-  }
+  };
 }
 
 /**
@@ -112,14 +111,14 @@ export function Patch (path?: string): MethodDecorator {
  *    - An array of combinations of any of the above.
  *    - examples: https://expressjs.com/en/4x/api.html#path-examples.
  */
-export function Delete (path?: string): MethodDecorator {
-  return <MethodDecorator>function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function Delete(path?: string): MethodDecorator {
+  return <MethodDecorator> function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
 
     metadata.controller.setMethodHTTPMethod(target, propertyKey, HttpMethod.DELETE);
     metadata.controller.setMethodHTTPPath(target, propertyKey, getPath(path));
 
     return descriptor;
-  }
+  };
 }
 
 /**
@@ -132,16 +131,15 @@ export function Delete (path?: string): MethodDecorator {
  *    - An array of combinations of any of the above.
  *    - examples: https://expressjs.com/en/4x/api.html#path-examples.
  */
-export function Options (path?: string): MethodDecorator {
-  return <MethodDecorator>function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function Options(path?: string): MethodDecorator {
+  return <MethodDecorator> function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
 
     metadata.controller.setMethodHTTPMethod(target, propertyKey, HttpMethod.OPTIONS);
     metadata.controller.setMethodHTTPPath(target, propertyKey, getPath(path));
-    
-    return descriptor;
-  }
-}
 
+    return descriptor;
+  };
+}
 
 function getPath(path?: string) {
   let routePath = '/';

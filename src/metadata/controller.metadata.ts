@@ -2,7 +2,6 @@ import { METADATA_KEY } from '../constants';
 import { getClassMetadata, setClassMetadata, getMethodMetadata, setMethodMetadata } from './common.metadata';
 import { HttpMethod } from '../enums';
 
-
 // ====> Controller Middlewares
 
 export function getControllerMiddlewares(controllerDef: any): any[] {
@@ -12,7 +11,6 @@ export function getControllerMiddlewares(controllerDef: any): any[] {
 export function setControllerMiddlewares(controllerDef: any, middlewares: any[]): void {
   setClassMetadata(METADATA_KEY.MIDDLEWARE, controllerDef, middlewares);
 }
-
 
 // ====> Controller Method Middlewares
 
@@ -24,17 +22,15 @@ export function setControllerMethodMiddlewares(controllerDef: any, methodName: s
   setMethodMetadata(METADATA_KEY.MIDDLEWARE, controllerDef, methodName, middlewares);
 }
 
-
 // ====> HTTP METHOD
 
 export function getMethodHTTPMethod(controllerInstance: any, methodName: string): HttpMethod {
-  return <HttpMethod>getMethodMetadata(METADATA_KEY.HTTP_METHOD, controllerInstance, methodName);
+  return <HttpMethod> getMethodMetadata(METADATA_KEY.HTTP_METHOD, controllerInstance, methodName);
 }
 
 export function setMethodHTTPMethod(controllerDef: any, methodName: string, httpMethod: HttpMethod) {
   return setMethodMetadata(METADATA_KEY.HTTP_METHOD, controllerDef, methodName, httpMethod);
 }
-
 
 // ====> HTTP PATH
 
@@ -45,7 +41,6 @@ export function getMethodHTTPPath(controllerInstance: any, methodName: string): 
 export function setMethodHTTPPath(controllerDef: any, methodName: string, httpPath: string) {
   return setMethodMetadata(METADATA_KEY.ROUTE_INFO, controllerDef, methodName, httpPath);
 }
-
 
 // ====> Validation Schema
 
