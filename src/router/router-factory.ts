@@ -1,7 +1,6 @@
-import { RouteInfo } from "../route/route.info";
+import { RouteInfo } from '../route/route.info';
 import { Router } from 'express';
-import { ILogger } from "@nodearch/core";
-
+import { ILogger } from '@nodearch/core';
 
 export class RouterFactory {
 

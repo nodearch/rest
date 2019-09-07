@@ -1,7 +1,6 @@
 import express from 'express';
 import { HttpMethod } from '../enums';
 
-
 export class RouteInfo {
   public method: HttpMethod;
   public path: string;
@@ -20,10 +19,10 @@ export class RouteInfo {
     this.method = method;
     this.path = path;
     this.middlewares = [
-      ...controllerGuards, 
-      ...controllerMethodGuards, 
-      ...controllerMiddlewares, 
-      ...controllerMethodMiddlewares      
+      ...controllerGuards,
+      ...controllerMethodGuards,
+      ...controllerMiddlewares,
+      ...controllerMethodMiddlewares
     ];
 
     if (validationMiddleware) {

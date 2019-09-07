@@ -1,9 +1,9 @@
-import { ControllerInfo, IControllerMethod } from "@nodearch/core";
-import { RouteInfo } from "./route.info";
-import { getGuardsMiddleware } from "../auth";
+import { ControllerInfo, IControllerMethod } from '@nodearch/core';
+import { RouteInfo } from './route.info';
+import { getGuardsMiddleware } from '../auth';
 import * as metadata from '../metadata';
-import { IRouteHandlerOptions } from "./handler-options.interface";
-import { getValidationMiddleware } from "../validation";
+import { IRouteHandlerOptions } from './handler-options.interface';
+import { getValidationMiddleware } from '../validation';
 
 export class RouteHandler {
 
@@ -33,12 +33,11 @@ export class RouteHandler {
     const controllerGuards = getGuardsMiddleware(controllerInfo.guards);
     const controllerMiddlewares = metadata.controller.getControllerMiddlewares(controllerInfo.classDef);
 
-
     controllerInfo.methods.forEach((methodInfo: IControllerMethod) => {
       const controllerMethodGuards = getGuardsMiddleware(methodInfo.guards);
       const controllerMethodMiddlewares = metadata.controller.getControllerMethodMiddlewares(controllerInfo.classInstance, methodInfo.name);
       const httpMethod = metadata.controller.getMethodHTTPMethod(controllerInfo.classInstance, methodInfo.name);
-      const httpPath = metadata.controller.getMethodHTTPPath(controllerInfo.classInstance, methodInfo.name); 
+      const httpPath = metadata.controller.getMethodHTTPPath(controllerInfo.classInstance, methodInfo.name);
       const fullHttpPath = routePrefix ? routePrefix + httpPath : httpPath;
 
       const validationSchema = metadata.controller.getMethodValidationSchema(controllerInfo.classInstance, methodInfo.name);
@@ -64,7 +63,7 @@ export class RouteHandler {
 
     return routesInfo;
   }
-  
+
   private getRoutePrefix(controllerPrefix?: string): string | undefined {
     if (controllerPrefix) {
       let routePrefix;
@@ -75,7 +74,7 @@ export class RouteHandler {
       else {
         routePrefix = controllerPrefix;
       }
-  
+
       return routePrefix.charAt(0) === '/' ? routePrefix : '/' + routePrefix;
     }
   }

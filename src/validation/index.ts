@@ -3,7 +3,7 @@ import { RequestData } from '../interfaces';
 import Joi from '@hapi/joi';
 
 export function getValidationMiddleware(validationSchema: any, validationOptions?: Joi.ValidationOptions) {
-  return function (req: Request, res: Response, next: any) {
+  return function(req: Request, res: Response, next: any) {
 
     const dataToValidate: RequestData = {};
 
@@ -35,5 +35,5 @@ export function getValidationMiddleware(validationSchema: any, validationOptions
     else {
       next();
     }
-  }
+  };
 }
