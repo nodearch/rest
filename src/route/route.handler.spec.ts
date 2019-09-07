@@ -2,10 +2,10 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { stub, SinonStub } from 'sinon';
 import { RouteHandler } from './route.handler';
-import { guard } from '../metadata';
 import { Controller, Module, Guard, GuardProvider, ControllerInfo } from '@nodearch/core';
 import * as metadata from '../metadata';
 import { HttpMethod } from '../enums';
+
 describe('route/route.handler', () => {
 
   describe('RouteHandler', () => {
