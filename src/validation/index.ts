@@ -15,7 +15,7 @@ export function getValidationMiddleware(validationSchema: any, validationOptions
     });
 
     const result = Joi.validate(dataToValidate, validationSchema, validationOptions);
-    
+
     if (result.error) {
       res.status(400).json(result.error.details);
     }
