@@ -1,11 +1,15 @@
+const METADATA_PREFIX = 'nodearch-rest:';
+
 const METADATA_KEY = {
-  DESIGN_PARAM_TYPES: 'design:paramtypes',
-  ARCH_ROUTE_INFO: 'arch:restrouteinfo',
-  ARCH_MIDDLEWARE: 'arch:restmiddleware',
-  ARCH_VALIDATION_SCHEMA: 'arch:restvalidationschema',
-  ARCH_CONTROLLER_PREFIX: 'arch:controllerprefix'
+  ROUTE_INFO: 'route-info',
+  HTTP_METHOD: 'http-method',
+  HTTP_PATH: 'http-path',
+  MIDDLEWARE: 'middleware',
+  VALIDATION_SCHEMA: 'validation-schema',
+  AUTH_GUARD: 'auth-guard'
 };
 
 export {
-  METADATA_KEY
+  METADATA_KEY,
+  METADATA_PREFIX
 };

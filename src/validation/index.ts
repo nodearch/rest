@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { RequestData } from './interfaces';
+import { RequestData } from '../interfaces';
 import Joi from '@hapi/joi';
 
-export function validate(validationSchema: any, validationOptions?: Joi.ValidationOptions) {
-  return function (req: Request, res: Response, next: any) {
+export function getValidationMiddleware(validationSchema: any, validationOptions?: Joi.ValidationOptions) {
+  return function(req: Request, res: Response, next: any) {
 
     const dataToValidate: RequestData = {};
 
@@ -15,7 +15,7 @@ export function validate(validationSchema: any, validationOptions?: Joi.Validati
     });
 
     const result = Joi.validate(dataToValidate, validationSchema, validationOptions);
-    
+
     if (result.error) {
       res.status(400).json(result.error.details);
     }
@@ -23,5 +23,5 @@ export function validate(validationSchema: any, validationOptions?: Joi.Validati
       Object.assign(req, result.value);
       next();
     }
-  }
+  };
 }
