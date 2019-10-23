@@ -72,14 +72,14 @@ describe('server', () => {
       }
 
       @Get('/')
-      @Validate(Joi.object({ params: Joi.object() }))
+      @Validate({ params: Joi.object() })
       public findAll(): string[] {
         return ['data1', 'data2'];
       }
 
       @Guard(['guard2'])
       @Middleware([() => {}])
-      @Validate(Joi.object({ body: Joi.object() }))
+      @Validate({ body: Joi.object() })
       @Put('/:id')
       public update(): string {
         return 'data1';

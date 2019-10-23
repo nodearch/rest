@@ -14,7 +14,8 @@ export class RouteInfo {
     controllerMethodMiddlewares: any[],
     controllerGuards: any[],
     controllerMethodGuards: any[],
-    validationMiddleware?: any
+    validationMiddleware?: any,
+    fileUploadMiddleware?: any
   ) {
     this.method = method;
     this.path = path;
@@ -27,6 +28,10 @@ export class RouteInfo {
 
     if (validationMiddleware) {
       this.middlewares.push(validationMiddleware);
+    }
+
+    if (fileUploadMiddleware) {
+      this.middlewares = [fileUploadMiddleware].concat(this.middlewares);
     }
 
     this.middlewares.push(routeHandlerMethod);

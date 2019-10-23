@@ -3,7 +3,8 @@ import { RouteInfo } from './route.info';
 import { getGuardsMiddleware } from '../auth';
 import * as metadata from '../metadata';
 import { IRouteHandlerOptions } from './handler-options.interface';
-import { getValidationMiddleware } from '../validation';
+import { getValidationMiddleware, ValidationSchema } from '../validation';
+import { getFileUploadMiddleware } from '../fileUpload';
 
 export class RouteHandler {
 
@@ -40,11 +41,17 @@ export class RouteHandler {
       const httpPath = metadata.controller.getMethodHTTPPath(controllerInfo.classInstance, methodInfo.name);
       const fullHttpPath = routePrefix ? routePrefix + httpPath : httpPath;
 
-      const validationSchema = metadata.controller.getMethodValidationSchema(controllerInfo.classInstance, methodInfo.name);
-      let validationMiddleware;
+      const validationSchema: ValidationSchema = metadata.controller.getMethodValidationSchema(controllerInfo.classInstance, methodInfo.name);
+      const fileUpload = metadata.controller.getMethodFileUpload(controllerInfo.classInstance, methodInfo.name);
+
+      let validationMiddleware, fileUploadMiddleware;
 
       if (validationSchema) {
         validationMiddleware = getValidationMiddleware(validationSchema, this.options.joiValidationOptions);
+      }
+
+      if (fileUpload) {
+        fileUploadMiddleware = getFileUploadMiddleware(fileUpload, this.options.fileUploadOptions);
       }
 
       routesInfo.push(
@@ -56,7 +63,8 @@ export class RouteHandler {
           controllerMethodMiddlewares,
           controllerGuards,
           controllerMethodGuards,
-          validationMiddleware
+          validationMiddleware,
+          fileUploadMiddleware
         )
       );
     });
