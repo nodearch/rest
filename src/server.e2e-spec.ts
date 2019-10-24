@@ -2,13 +2,16 @@ import { describe, it } from 'mocha';
 import supertest from 'supertest';
 import { RestServer } from './server';
 import { ArchApp, Injectable, Controller, Module, GuardProvider, Guard, IGuard } from '@nodearch/core';
-import { Get, Post, Validate, Middleware, Put, Patch, Delete, Options } from './decorators';
+import { Get, Post, Validate, Middleware, Put, Delete, Options } from './decorators';
 import { RegisterRoutes, StartExpress, ExpressMiddleware, Sequence } from './sequence';
 import * as Joi from '@hapi/joi';
+import path from 'path';
+import fs from 'fs';
 import { AuthGuard, IAuthGuard } from './auth';
 import express = require('express');
 import { ResponseSchemas } from './swagger';
 import { Upload } from './decorators';
+import { expect } from 'chai';
 
 describe('[e2e]server', () => {
 
@@ -36,11 +39,13 @@ describe('[e2e]server', () => {
       }
 
       @Post('/')
+      @Upload('file1')
       public create(req: express.Request, res: express.Response) {
         res.json(req.body);
       }
 
       @Put('/:id')
+      @Upload([{name: 'file1', maxCount: 1}, {name: 'file2'}])
       public update(req: express.Request, res: express.Response) {
         req.body.id = Number(req.params.id);
         res.json(req.body);
@@ -246,6 +251,14 @@ describe('[e2e]server', () => {
 
     after(async () => {
       restServer.close();
+      await fs.promises.unlink(path.join(__dirname, '/swagger/public/swagger.json'));
+      const uploadedFiles = await fs.promises.readdir(path.join(__dirname, '../nodearch-file-uploads'));
+
+      for (const fileToDelete of uploadedFiles) {
+        await fs.promises.unlink(path.join(__dirname, '../nodearch-file-uploads', fileToDelete));
+      }
+
+      await fs.promises.rmdir(path.join(__dirname, '../nodearch-file-uploads'));
     });
 
     describe('all requests actions without middlewares', () => {
@@ -259,20 +272,31 @@ describe('[e2e]server', () => {
 
       it('Post Request', async () => {
         return request.post('/controller1')
-          .send({ ok: 1 })
-          .set('Accept', 'application/json')
+          .type('form')
+          .attach('file1', path.join(__dirname, 'server.ts'))
           .expect('Content-Type', /json/)
           .expect(200)
-          .expect({ ok: 1 });
+          .then(response => {
+            expect(response.body).to.deep.nested.include({
+              'file1.destination': 'nodearch-file-uploads/', 'file1.fieldname': 'file1',
+              'file1.originalname': 'server.ts', 'file1.size': 3864
+            });
+          });
       });
 
       it('Put Request', async () => {
         return request.put('/controller1/1')
-          .send({ ok: 2 })
-          .set('Accept', 'application/json')
-          .expect('Content-Type', /json/)
-          .expect(200)
-          .expect({ id: 1, ok: 2 });
+        .type('form')
+        .attach('file2', path.join(__dirname, 'server.ts'))
+        .expect('Content-Type', /json/)
+        .expect(200)
+        .then(response => {
+
+          expect(response.body).to.deep.nested.include({
+            'file2[0].destination': 'nodearch-file-uploads/', 'file2[0].fieldname': 'file2',
+            'file2[0].originalname': 'server.ts', 'file2[0].size': 3864
+          });
+        });
       });
 
       it('Delete Request', async () => {
