@@ -85,7 +85,7 @@ describe('swagger/open-api-schema', () => {
           body: Joi.object().keys({
             id: Joi.string().guid().max(7).required().example(2),
             limit: Joi.number().min(4).optional(),
-            enable: Joi.boolean().default(true).example(false).description('Enable'),
+            enable: Joi.boolean().default(true).example(false).valid(true).description('Enable'),
             dates: Joi.array().items(Joi.date()).default(['11-11-1991', '12-01-1999']).min(1).max(10).description('the tags')
            }).example({ id: 2 }).description('Update Data'),
           params: Joi.object().keys({ name: Joi.string().pattern(/^./).optional() }),
@@ -94,6 +94,8 @@ describe('swagger/open-api-schema', () => {
 
         const openApiSchema = new OpenApiSchema(controllers, { info: { title: 'Testing' }, servers: [{ url: 'http://test.com' }] });
 
+        expect(openApiSchema.servers).to.deep.equals([{ url: 'http://test.com' }]);
+        expect(openApiSchema.info).to.deep.equals({ title: 'Testing' });
         expect(openApiSchema.components).to.deep.equals({
           schemas: {
             'put-controller2-body': {
@@ -101,7 +103,7 @@ describe('swagger/open-api-schema', () => {
               properties: {
                 id: { type: 'string', required: true, format: 'uuid', maxLength: 7 },
                 limit: { type: 'number', required: false, minimum: 4 },
-                enable: { type: 'boolean', default: true, description: 'Enable', required: true, example: false },
+                enable: { type: 'boolean', default: true, description: 'Enable', required: true, example: false, enum: [true] },
                 dates: {
                   type: 'array', description: 'the tags', items: { type: 'string', format: 'date' },
                   default: ['11-11-1991', '12-01-1999'], required: true, minItems: 1, maxItems: 10
@@ -139,13 +141,19 @@ describe('swagger/open-api-schema', () => {
         getMethodFileUpload.returns([{ name: 'file1' }, { name: 'file2', maxCount: 3 }]);
         getMethodValidationSchema.returns({
           body: Joi.object().keys({
-            id: Joi.string().guid().max(7).required().example(2),
+            id: Joi.string().guid().max(7).required().example(2).description('Id')
+              .valid('OOII-YJKK', 'OOII-IOPQ', 'OOII-H0UK'),
             data: Joi.object().keys({
               likes: Joi.array().items(Joi.object().keys({
                 date: Joi.date().example('11-11-1991').required(),
-                times: Joi.array().items(Joi.number().integer())
-              }))
-             }).optional(),
+                times: Joi.array().items(Joi.number().integer().valid(1, 2))
+              })).unique().example([]),
+            key: Joi.string().base64(),
+            url: Joi.string().dataUri().example('http://test.com')
+             })
+              .max(10).min(12).default({ id: 'OOII-YJKK' })
+              .optional(),
+            binaryFile: Joi.binary().encoding('base64'),
             file1: Joi.object().required().description('Enable'),
            }).example({ id: 2 }).description('Update Data'),
           params: Joi.object().keys({ id: Joi.string().pattern(/^./).optional() }),
@@ -173,22 +181,29 @@ describe('swagger/open-api-schema', () => {
           '/controller2/test/{id}/test.put.requestBody.content.multipart/form-data.schema': {
             type: 'object', description: 'Update Data', example: { id: 2 },
             properties: {
-              id: { type: 'string', required: true, format: 'uuid', maxLength: 7 },
+              id: {
+                type: 'string', required: true, format: 'uuid', maxLength: 7,
+                description: 'Id', enum: [ 'OOII-YJKK', 'OOII-IOPQ', 'OOII-H0UK' ]
+              },
               data: {
-                type: 'object', required: false,
+                type: 'object', required: false, maxProperties: 10,  minProperties: 12,
+                default: { id: 'OOII-YJKK' },
                 properties: {
+                  key: { type: 'string', format: 'byte' },
+                  url: { type: 'string', format: 'uri', example: 'http://test.com' },
                   likes: {
-                    type: 'array',
+                    type: 'array', example: [], uniqueItems: true,
                     items: {
                       type: 'object',
                       properties: {
                         date: { type: 'string', required: true,  example: '11-11-1991', format: 'date' },
-                        times: { type: 'array', items: { type: 'integer' } }
+                        times: { type: 'array', items: { type: 'integer', enum: [1, 2], required: false } }
                       }
                     }
                   }
                 }
               },
+              binaryFile: { type: 'string', format: 'binary', required: false },
               file1: { type: 'string', format: 'binary' },
               file2: { type: 'array', maxItems: 3, items: { type: 'string', format: 'binary' } }
             }
@@ -202,6 +217,58 @@ describe('swagger/open-api-schema', () => {
           },
         });
       });
+
+      it('text request & text response', () => {
+
+        const controllers: any[] = [{ classInstance: {}, prefix: 'controller1', methods: [{ name: 'find' }] }];
+        const responsesSchema = [{
+            status: 200, isArray: true, schema: {
+              type: 'string', required: true,
+            }, description: 'Test description'
+          }, { status: 400, description: 'Test Error description2' }
+        ];
+        getMethodHTTPPath.returns('/test/:id/test/:name');
+        getMethodHttpResponses.returns(responsesSchema);
+        getMethodValidationSchema.returns({
+          body: Joi.number().required().default(1),
+          params: Joi.object().keys({ name: Joi.string().pattern(/^./).optional() }),
+          query: Joi.object().keys({ query: Joi.any() })
+        });
+        const openApiSchema = new OpenApiSchema(controllers);
+
+        expect(openApiSchema.components).to.deep.equals({
+          schemas: {
+            'get-controller1-body': { type: 'number', default: 1, required: true },
+            'get-controller1-response': { type: 'string', required: true }
+          }
+        });
+
+        expect(openApiSchema.paths).to.deep.equals({
+          '/controller1/test/{id}/test/{name}': {
+            get: {
+              tags: ['controller1'],
+              operationId: 'get-controller1',
+              parameters: [
+                { type: 'string', required: true, pattern: '/^./', name: 'name', in: 'path' },
+                { name: 'id', in: 'path', type: 'string', required: true },
+                { name: 'query', in: 'query' }
+              ],
+              requestBody: {
+                required: true,
+                content: { 'text/plain': { schema: { $ref: '#/components/schemas/get-controller1-body' } } }
+              },
+              responses: {
+                200: {
+                  description: 'Test description',
+                  content: { 'text/plain': { schema: { type: 'array', items: { $ref: '#/components/schemas/get-controller1-response' } } } }
+                },
+                400: { description: 'Test Error description2' }
+              }
+            }
+          }
+        });
+      });
+
     });
 
   });
