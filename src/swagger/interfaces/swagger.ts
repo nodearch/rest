@@ -38,7 +38,7 @@ export interface SchemaProperties {
 export type JsonSchema = StringSchema | BooleanSchema | NumberSchema | ObjectSchema | ArraySchema;
 
 export interface JsonSchemaBase {
-  type: string;
+  type?: string;
   description?: string;
   example?: any;
   default?: any;

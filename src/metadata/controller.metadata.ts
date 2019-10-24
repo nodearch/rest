@@ -3,6 +3,7 @@ import { getClassMetadata, setClassMetadata, getMethodMetadata, setMethodMetadat
 import { HttpMethod } from '../enums';
 import { FileUpload } from '../interfaces';
 import { ValidationSchema } from '../validation';
+import { HttpResponse } from '../swagger';
 
 // ====> Controller Middlewares
 
@@ -56,7 +57,7 @@ export function setMethodValidationSchema(controllerDef: any, methodName: string
 
 // ====> API Responses Schema
 
-export function getMethodHttpResponses(controllerInstance: any, methodName: string): any {
+export function getMethodHttpResponses(controllerInstance: any, methodName: string): HttpResponse[] {
   return getMethodMetadata(METADATA_KEY.SWAGGER_HTTP_RESPONSES, controllerInstance, methodName);
 }
 

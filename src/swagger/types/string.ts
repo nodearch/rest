@@ -59,17 +59,15 @@ export class StringType implements IDataType {
           }
           break;
 
-        case 'format':
-          this.setFormat(null, constraint);
-          break;
-
         case 'pattern':
           if (typeof constraint.value === 'string') {
             this.pattern = constraint.value;
           }
           break;
 
+        case 'format':
         default:
+          this.setFormat(null, constraint);
           break;
       }
     }
@@ -78,6 +76,7 @@ export class StringType implements IDataType {
   setFormat(type?: string | null, format?: PropertyRule | null) {
 
     const mapFormats: any = { dataUri: 'uri', base64: 'byte', email: 'email', guid: 'uuid', hostname: 'hostname' };
+
     if (type) {
       if (type === 'binary') {
         if (this.format === 'base64') {

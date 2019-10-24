@@ -115,11 +115,12 @@ export class OpenApiSchema {
       action.requestBody = { content: { 'multipart/form-data': { schema: schemaBody } } };
     }
     else if (schema && schema.body) {
+
       const definitionKey = `${action.operationId}-body`;
       const bodySchema = OpenApiSchema.parseTypes(schema.body.describe(), presence);
       this.components.schemas[definitionKey] = bodySchema;
       const { required } = bodySchema;
-      const contentType = !['array', 'object'].includes(bodySchema.type) ? 'text/plain' : 'application/json';
+      const contentType = bodySchema.type && !['array', 'object'].includes(bodySchema.type) ? 'text/plain' : 'application/json';
 
       action.requestBody = { required, content: { [contentType]: { schema: { $ref: `#/components/schemas/${definitionKey}` } } } };
     }
@@ -135,7 +136,7 @@ export class OpenApiSchema {
         if (httpRes.schema) {
           const definitionKey = `${action.operationId}-response`;
           this.components.schemas[definitionKey] = httpRes.schema;
-          const contentType = !['array', 'object'].includes(httpRes.schema.type) ? 'text/plain' : 'application/json';
+          const contentType = httpRes.schema.type && !['array', 'object'].includes(httpRes.schema.type) ? 'text/plain' : 'application/json';
 
           action.responses[httpRes.status].content = {
             [contentType]: httpRes.isArray ?
@@ -159,11 +160,13 @@ export class OpenApiSchema {
     for (const urlPart of url.split('/')) {
       if (urlPart !== '') {
         if (urlPart.startsWith(':')) {
+
           const pathParam: string = urlPart.substring(1);
           pathParams.push(pathParam);
           fullPath = `${fullPath}/{${pathParam}}`;
         }
         else {
+
           fullPath = `${fullPath}/${urlPart}`;
         }
       }
@@ -193,7 +196,7 @@ export class OpenApiSchema {
           return new BoolType(this.getSchemaRules(propertySchema, presence));
 
       default:
-        throw Error(`the datatype ${propertySchema.type} not supported in swagger`);
+        return {};
     }
   }
 
