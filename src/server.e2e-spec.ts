@@ -279,7 +279,7 @@ describe('[e2e]server', () => {
           .then(response => {
             expect(response.body).to.deep.nested.include({
               'file1.destination': 'nodearch-file-uploads/', 'file1.fieldname': 'file1',
-              'file1.originalname': 'server.ts', 'file1.size': 3864
+              'file1.originalname': 'server.ts'
             });
           });
       });
@@ -294,7 +294,7 @@ describe('[e2e]server', () => {
 
           expect(response.body).to.deep.nested.include({
             'file2[0].destination': 'nodearch-file-uploads/', 'file2[0].fieldname': 'file2',
-            'file2[0].originalname': 'server.ts', 'file2[0].size': 3864
+            'file2[0].originalname': 'server.ts'
           });
         });
       });

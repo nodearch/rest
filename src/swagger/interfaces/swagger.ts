@@ -5,7 +5,7 @@ export interface SwaggerOptions {
   schemes?: string[];
 }
 
-export interface SwaggerConfig {
+export interface ISwaggerConfig {
   enable: boolean;
   options?: SwaggerOptions;
 }

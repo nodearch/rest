@@ -6,8 +6,8 @@ import Joi from '@hapi/joi';
 import { RouteHandler, RouteInfo } from './route';
 import { RouterFactory } from './router';
 import { Logger } from './logger';
-import { SwaggerConfig, OpenApiSchema } from './swagger';
-import { IConnection } from './interfaces';
+import { ISwaggerConfig, OpenApiSchema } from './swagger';
+import { IServerConfig } from './interfaces';
 
 export class RestServer implements IAppExtension {
 
@@ -18,9 +18,9 @@ export class RestServer implements IAppExtension {
   private port: number;
   private hostname: string;
   private joiValidationOptions?: Joi.ValidationOptions;
-  private swagger?: SwaggerConfig;
+  private swagger?: ISwaggerConfig;
 
-  constructor(options: { config: IConnection, sequence: Sequence }) {
+  constructor(options: { config: IServerConfig, sequence: Sequence }) {
     this.logger = new Logger();
     this.expressSequence = options.sequence.expressSequence;
     this.port = options.config.port;
