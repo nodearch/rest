@@ -1,4 +1,4 @@
-import { IDataType, PropertyRule, JsonSchema } from '../index';
+import { IDataType, IPropertyRule, JsonSchema } from '../interfaces';
 import { OpenApiSchema } from '../open-api-schema';
 import Joi from '@hapi/joi';
 
@@ -24,7 +24,7 @@ export class ArrayType implements IDataType {
     }
   }
 
-  setConstraints(constraints: PropertyRule[]) {
+  setConstraints(constraints: IPropertyRule[]) {
     for (const constraint of constraints) {
 
       switch (constraint.name) {

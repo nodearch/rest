@@ -3,30 +3,30 @@ import { ControllerInfo } from '@nodearch/core';
 import Joi from '@hapi/joi';
 import path from 'path';
 import { fs } from '@nodearch/core';
-import express from 'express';
-import {
-  SwaggerOptions, SwaggerAppInfo, SwaggerAPIServer, HttpResponse, JsonSchema,
-  ObjectType, ArrayType, NumberType, BoolType, StringType, PropertyRule, ParsedUrl
- } from './index';
-import { FileUpload } from '../interfaces';
+import { ObjectType, ArrayType, NumberType, BoolType, StringType } from './types';
+import { IFileUpload } from '../interfaces';
 import { ValidationSchema } from '../validation';
+import {
+  ISwaggerAPIServer, ISwaggerAppInfo, ISwaggerOptions, IParsedUrl,
+  IHttpResponseSchema, JsonSchema, IPropertyRule
+} from './interfaces';
 
 export class OpenApiSchema {
 
   public readonly openapi: string = '3.0.0';
-  public readonly servers: SwaggerAPIServer[] = [];
-  public readonly info: SwaggerAppInfo = {};
+  public readonly servers: ISwaggerAPIServer[] = [];
+  public readonly info: ISwaggerAppInfo = {};
   public readonly components: any = { schemas: {} };
   public readonly paths: any = {};
 
-  constructor(controllers: ControllerInfo[], swaggerOptions?: SwaggerOptions, joiOptions?: Joi.ValidationOptions) {
+  constructor(controllers: ControllerInfo[], swaggerOptions?: ISwaggerOptions, joiOptions?: Joi.ValidationOptions) {
 
     if (swaggerOptions) {
       this.servers = swaggerOptions.servers || [];
       this.info = swaggerOptions.info || {};
     }
 
-    const PathsUrlParams: { [key: string]: ParsedUrl } = {};
+    const pathsUrlParams: { [key: string]: IParsedUrl } = {};
 
     for (const controller of controllers) {
       for (const method of controller.methods) {
@@ -34,10 +34,10 @@ export class OpenApiSchema {
         const schema: ValidationSchema = metadata.controller.getMethodValidationSchema(controller.classInstance, method.name);
         const httpMethod = metadata.controller.getMethodHTTPMethod(controller.classInstance, method.name);
         const httpPath = metadata.controller.getMethodHTTPPath(controller.classInstance, method.name);
-        const httpResponses: HttpResponse[] = metadata.controller.getMethodHttpResponses(controller.classInstance, method.name);
-        const filesUpload: FileUpload[] = metadata.controller.getMethodFileUpload(controller.classInstance, method.name);
+        const httpResponses: IHttpResponseSchema[] = metadata.controller.getMethodHttpResponses(controller.classInstance, method.name);
+        const filesUpload: IFileUpload[] = metadata.controller.getMethodFileUpload(controller.classInstance, method.name);
         const fullHttpPath = path.join(`/${controller.prefix}` || '', httpPath);
-        const urlWithParams = PathsUrlParams[fullHttpPath] || this.getUrlWithParams(fullHttpPath);
+        const urlWithParams = pathsUrlParams[fullHttpPath] || this.getUrlWithParams(fullHttpPath);
         const action: any = { tags: [ controller.prefix ], operationId: `${httpMethod}-${controller.prefix}`, parameters: [] };
         const presence = joiOptions && joiOptions.presence ? joiOptions.presence : 'required';
 
@@ -93,7 +93,7 @@ export class OpenApiSchema {
     }
   }
 
-  private setRequestBody(action: any, presence: string, schema?: ValidationSchema, files?: FileUpload[]) {
+  private setRequestBody(action: any, presence: string, schema?: ValidationSchema, files?: IFileUpload[]) {
 
     if (files && files.length > 0) {
 
@@ -126,7 +126,7 @@ export class OpenApiSchema {
     }
   }
 
-  private setResponses(action: any, httpResponses?: HttpResponse[]) {
+  private setResponses(action: any, httpResponses?: IHttpResponseSchema[]) {
     action.responses = {};
 
     if (httpResponses) {
@@ -152,7 +152,7 @@ export class OpenApiSchema {
 
   }
 
-  private getUrlWithParams(url: string): ParsedUrl {
+  private getUrlWithParams(url: string): IParsedUrl {
 
     const pathParams: string[] = [];
     let fullPath: string = '';
@@ -200,9 +200,9 @@ export class OpenApiSchema {
     }
   }
 
-  public static getSchemaRules(schema: any, presence: string): PropertyRule[] {
+  public static getSchemaRules(schema: any, presence: string): IPropertyRule[] {
 
-    const rules: PropertyRule[] = [];
+    const rules: IPropertyRule[] = [];
 
     if (schema.flags) {
       if (schema.flags.default) {
@@ -250,7 +250,4 @@ export class OpenApiSchema {
     await fs.writeFile(path.join(__dirname, 'public/swagger.json'), JSON.stringify(this));
   }
 
-  public register(expressApp: express.Application): void {
-    expressApp.use('/documentation', express.static(path.join(__dirname, 'public')));
-  }
 }

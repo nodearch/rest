@@ -1,4 +1,4 @@
-import { IDataType, PropertyRule } from '../index';
+import { IDataType, IPropertyRule } from '../interfaces';
 
 export class StringType implements IDataType {
 
@@ -23,7 +23,7 @@ export class StringType implements IDataType {
     this.setFormat(type);
   }
 
-  setConstraints(constraints: PropertyRule[]) {
+  setConstraints(constraints: IPropertyRule[]) {
     for (const constraint of constraints) {
 
       switch (constraint.name) {
@@ -73,7 +73,7 @@ export class StringType implements IDataType {
     }
   }
 
-  setFormat(type?: string | null, format?: PropertyRule | null) {
+  setFormat(type?: string | null, format?: IPropertyRule | null) {
 
     const mapFormats: any = { dataUri: 'uri', base64: 'byte', email: 'email', guid: 'uuid', hostname: 'hostname' };
 

@@ -53,7 +53,6 @@ export class RestServer implements IAppExtension {
     if (this.swagger && this.swagger.enable) {
       const swagger = new OpenApiSchema(controllers, this.swagger.options, this.joiValidationOptions);
       await swagger.writeOpenAPI();
-      await swagger.register(this.expressApp);
     }
 
     await this.start();

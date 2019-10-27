@@ -7,6 +7,7 @@ import { RegisterRoutes, StartExpress, ExpressMiddleware, Sequence } from './seq
 import * as Joi from '@hapi/joi';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { AuthGuard, IAuthGuard } from './auth';
 import express = require('express');
 import { ResponseSchemas } from './swagger';
@@ -252,13 +253,13 @@ describe('[e2e]server', () => {
     after(async () => {
       restServer.close();
       await fs.promises.unlink(path.join(__dirname, '/swagger/public/swagger.json'));
-      const uploadedFiles = await fs.promises.readdir(path.join(__dirname, '../nodearch-file-uploads'));
+      const uploadedFiles = await fs.promises.readdir(path.join(os.tmpdir(), 'nodearch-file-uploads'));
 
       for (const fileToDelete of uploadedFiles) {
-        await fs.promises.unlink(path.join(__dirname, '../nodearch-file-uploads', fileToDelete));
+        await fs.promises.unlink(path.join(os.tmpdir(), 'nodearch-file-uploads', fileToDelete));
       }
 
-      await fs.promises.rmdir(path.join(__dirname, '../nodearch-file-uploads'));
+      await fs.promises.rmdir(path.join(os.tmpdir(), 'nodearch-file-uploads'));
     });
 
     describe('all requests actions without middlewares', () => {
@@ -278,7 +279,7 @@ describe('[e2e]server', () => {
           .expect(200)
           .then(response => {
             expect(response.body).to.deep.nested.include({
-              'file1.destination': 'nodearch-file-uploads/', 'file1.fieldname': 'file1',
+              'file1.destination': '/tmp/nodearch-file-uploads', 'file1.fieldname': 'file1',
               'file1.originalname': 'server.ts'
             });
           });
@@ -293,7 +294,7 @@ describe('[e2e]server', () => {
         .then(response => {
 
           expect(response.body).to.deep.nested.include({
-            'file2[0].destination': 'nodearch-file-uploads/', 'file2[0].fieldname': 'file2',
+            'file2[0].destination': '/tmp/nodearch-file-uploads', 'file2[0].fieldname': 'file2',
             'file2[0].originalname': 'server.ts'
           });
         });

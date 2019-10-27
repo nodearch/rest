@@ -1,16 +1,16 @@
-export interface SwaggerOptions {
-  info?: SwaggerAppInfo;
-  servers?: SwaggerAPIServer[];
+export interface ISwaggerOptions {
+  info?: ISwaggerAppInfo;
+  servers?: ISwaggerAPIServer[];
   basePath?: string;
   schemes?: string[];
 }
 
 export interface ISwaggerConfig {
   enable: boolean;
-  options?: SwaggerOptions;
+  options?: ISwaggerOptions;
 }
 
-export interface SwaggerAppInfo {
+export interface ISwaggerAppInfo {
   description?: string;
   version?: string;
   title?: string;
@@ -19,25 +19,25 @@ export interface SwaggerAppInfo {
   };
 }
 
-export interface SwaggerAPIServer {
+export interface ISwaggerAPIServer {
   url: string;
   description?: string;
 }
 
-export interface HttpResponse {
+export interface IHttpResponseSchema {
   status: number;
   description?: string;
   isArray?: boolean;
   schema?: JsonSchema;
 }
 
-export interface SchemaProperties {
+export interface ISchemaProperties {
   [key: string]: JsonSchema;
 }
 
-export type JsonSchema = StringSchema | BooleanSchema | NumberSchema | ObjectSchema | ArraySchema;
+export type JsonSchema = IStringSchema | IBooleanSchema | INumberSchema | IObjectSchema | IArraySchema;
 
-export interface JsonSchemaBase {
+export interface IJsonSchemaBase {
   type?: string;
   description?: string;
   example?: any;
@@ -47,7 +47,7 @@ export interface JsonSchemaBase {
   [key: string]: any;
 }
 
-export interface StringSchema extends JsonSchemaBase {
+export interface IStringSchema extends IJsonSchemaBase {
   example?: string;
   default?: string;
   required?: boolean;
@@ -58,14 +58,14 @@ export interface StringSchema extends JsonSchemaBase {
   minLength?: number;
 }
 
-export interface BooleanSchema extends JsonSchemaBase {
+export interface IBooleanSchema extends IJsonSchemaBase {
   example?: boolean;
   default?: boolean;
   required?: boolean;
   enum?: boolean[];
 }
 
-export interface NumberSchema extends JsonSchemaBase {
+export interface INumberSchema extends IJsonSchemaBase {
   example?: number;
   default?: number;
   required?: boolean;
@@ -74,8 +74,8 @@ export interface NumberSchema extends JsonSchemaBase {
   enum?: number[];
 }
 
-export interface ObjectSchema extends JsonSchemaBase {
-  properties?: SchemaProperties;
+export interface IObjectSchema extends IJsonSchemaBase {
+  properties?: ISchemaProperties;
   example?: object;
   default?: object;
   required?: boolean;
@@ -84,7 +84,7 @@ export interface ObjectSchema extends JsonSchemaBase {
   enum?: object[];
 }
 
-export interface ArraySchema extends JsonSchemaBase {
+export interface IArraySchema extends IJsonSchemaBase {
   items?: JsonSchema;
   example?: any[];
   default?: any[];
@@ -94,7 +94,7 @@ export interface ArraySchema extends JsonSchemaBase {
   enum?: any[][];
 }
 
-export interface ParsedUrl {
+export interface IParsedUrl {
   fullPath: string;
   pathParams: string[];
 }

@@ -1,4 +1,4 @@
-import { IDataType, PropertyRule } from '../index';
+import { IDataType, IPropertyRule } from '../interfaces';
 
 export class NumberType implements IDataType {
 
@@ -19,7 +19,7 @@ export class NumberType implements IDataType {
     }
   }
 
-  setConstraints(constraints: PropertyRule[]) {
+  setConstraints(constraints: IPropertyRule[]) {
     for (const constraint of constraints) {
 
       switch (constraint.name) {

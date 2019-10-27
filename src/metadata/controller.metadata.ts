@@ -1,9 +1,9 @@
 import { METADATA_KEY } from '../constants';
 import { getClassMetadata, setClassMetadata, getMethodMetadata, setMethodMetadata } from './common.metadata';
 import { HttpMethod } from '../enums';
-import { FileUpload } from '../interfaces';
+import { IFileUpload } from '../interfaces';
 import { ValidationSchema } from '../validation';
-import { HttpResponse } from '../swagger';
+import { IHttpResponseSchema } from '../swagger';
 
 // ====> Controller Middlewares
 
@@ -57,20 +57,20 @@ export function setMethodValidationSchema(controllerDef: any, methodName: string
 
 // ====> API Responses Schema
 
-export function getMethodHttpResponses(controllerInstance: any, methodName: string): HttpResponse[] {
+export function getMethodHttpResponses(controllerInstance: any, methodName: string): IHttpResponseSchema[] {
   return getMethodMetadata(METADATA_KEY.SWAGGER_HTTP_RESPONSES, controllerInstance, methodName);
 }
 
-export function setMethodHttpResponses(controllerDef: any, methodName: string, responses: any) {
-  setMethodMetadata(METADATA_KEY.SWAGGER_HTTP_RESPONSES, controllerDef, methodName, responses);
+export function setMethodHttpResponses(controllerDef: any, methodName: string, responsesSchema: IHttpResponseSchema[]) {
+  setMethodMetadata(METADATA_KEY.SWAGGER_HTTP_RESPONSES, controllerDef, methodName, responsesSchema);
 }
 
 // ====> File Upload
 
-export function getMethodFileUpload(controllerInstance: any, methodName: string): FileUpload[] {
+export function getMethodFileUpload(controllerInstance: any, methodName: string): IFileUpload[] {
   return getMethodMetadata(METADATA_KEY.FILE_UPLOAD, controllerInstance, methodName);
 }
 
-export function setMethodFileUpload(controllerDef: any, methodName: string, files: FileUpload[]) {
+export function setMethodFileUpload(controllerDef: any, methodName: string, files: IFileUpload[]) {
   setMethodMetadata(METADATA_KEY.FILE_UPLOAD, controllerDef, methodName, files);
 }

@@ -1,11 +1,13 @@
 import multer from 'multer';
-import { FileUpload } from '../interfaces';
+import { IFileUpload } from '../interfaces';
 import { Request, Response } from 'express';
+import path from 'path';
+import os from 'os';
 
-export function getFileUploadMiddleware(filesUpload: FileUpload[], options?: multer.Options) {
+export function getFileUploadMiddleware(filesUpload: IFileUpload[], options?: multer.Options) {
   return function(req: Request, res: Response, next: any) {
 
-    const multerOptions = options || { dest: 'nodearch-file-uploads/' };
+    const multerOptions = options || { dest: path.join(os.tmpdir(), 'nodearch-file-uploads') };
     let upload;
 
     if (filesUpload.length === 1) {

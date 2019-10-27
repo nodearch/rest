@@ -1,11 +1,11 @@
-import { IDataType, IObjectType, PropertyRule, SchemaProperties } from '../index';
+import { IDataType, IObjectType, IPropertyRule, ISchemaProperties } from '../interfaces';
 import { OpenApiSchema } from '../open-api-schema';
 import Joi from '@hapi/joi';
 
 export class ObjectType implements IDataType, IObjectType {
 
   public type: string;
-  public properties?: SchemaProperties;
+  public properties?: ISchemaProperties;
   public maxProperties?: number;
   public minProperties?: number;
   public default?: any;
@@ -33,7 +33,7 @@ export class ObjectType implements IDataType, IObjectType {
     }
   }
 
-  setConstraints(constraints: PropertyRule[]) {
+  setConstraints(constraints: IPropertyRule[]) {
     for (const constraint of constraints) {
 
       switch (constraint.name) {

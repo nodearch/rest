@@ -1,4 +1,4 @@
-import { IDataType, PropertyRule } from '../index';
+import { IDataType, IPropertyRule } from '../interfaces';
 
 export class BoolType implements IDataType {
 
@@ -17,7 +17,7 @@ export class BoolType implements IDataType {
     }
   }
 
-  setConstraints(constraints: PropertyRule[]) {
+  setConstraints(constraints: IPropertyRule[]) {
     for (const constraint of constraints) {
 
       switch (constraint.name) {
