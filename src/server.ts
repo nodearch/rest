@@ -18,7 +18,6 @@ export class RestServer implements IAppExtension {
   private port: number;
   private hostname: string;
   private joiValidationOptions?: Joi.ValidationOptions;
-  private swagger?: ISwaggerConfig;
 
   constructor(options: { config: IServerConfig, sequence: Sequence }) {
     this.logger = new Logger();
@@ -26,7 +25,6 @@ export class RestServer implements IAppExtension {
     this.port = options.config.port;
     this.hostname = options.config.hostname;
     this.joiValidationOptions = options.config.joiValidationOptions;
-    this.swagger = options.config.swagger;
     this.expressApp = express();
     this.server = http.createServer(this.expressApp);
   }
@@ -49,11 +47,6 @@ export class RestServer implements IAppExtension {
     this.registerRoutes(controllers);
 
     this.registerSequenceMiddlewares(this.expressSequence.slice(eRegisterRoutesIndex + 1, eStartIndex));
-
-    if (this.swagger && this.swagger.path) {
-      const swagger = new OpenApiSchema(controllers, this.swagger.options, this.joiValidationOptions);
-      await swagger.writeOpenAPI(this.swagger.path);
-    }
 
     await this.start();
 
