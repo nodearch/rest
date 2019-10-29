@@ -6,7 +6,9 @@ const METADATA_KEY = {
   HTTP_PATH: 'http-path',
   MIDDLEWARE: 'middleware',
   VALIDATION_SCHEMA: 'validation-schema',
-  AUTH_GUARD: 'auth-guard'
+  AUTH_GUARD: 'auth-guard',
+  SWAGGER_HTTP_RESPONSES: 'swagger-http-responses',
+  FILE_UPLOAD: 'file-upload'
 };
 
 export {

@@ -2,11 +2,17 @@ import { describe, it } from 'mocha';
 import supertest from 'supertest';
 import { RestServer } from './server';
 import { ArchApp, Injectable, Controller, Module, GuardProvider, Guard, IGuard } from '@nodearch/core';
-import { Get, Post, Validate, Middleware, Put, Patch, Delete, Options } from './decorators';
+import { Get, Post, Validate, Middleware, Put, Delete, Options } from './decorators';
 import { RegisterRoutes, StartExpress, ExpressMiddleware, Sequence } from './sequence';
 import * as Joi from '@hapi/joi';
+import path from 'path';
+import fs from 'fs';
+import os from 'os';
 import { AuthGuard, IAuthGuard } from './auth';
 import express = require('express');
+import { ResponseSchemas } from './swagger';
+import { Upload } from './decorators';
+import { expect } from 'chai';
 
 describe('[e2e]server', () => {
 
@@ -34,11 +40,13 @@ describe('[e2e]server', () => {
       }
 
       @Post('/')
+      @Upload('file1')
       public create(req: express.Request, res: express.Response) {
         res.json(req.body);
       }
 
       @Put('/:id')
+      @Upload([{name: 'file1', maxCount: 1}, {name: 'file2', maxCount: 2}])
       public update(req: express.Request, res: express.Response) {
         req.body.id = Number(req.params.id);
         res.json(req.body);
@@ -98,19 +106,14 @@ describe('[e2e]server', () => {
       }
 
       @Middleware(middleware3)
-      @Validate(Joi.object().keys({
-        body: Joi.object().keys({ a: Joi.string().required() }).required(),
-        params: Joi.object().keys({ id: Joi.number().required() }).required()
-      }))
+      @Validate({
+        body: Joi.object().keys({ a: Joi.number(), i: Joi.number().example(20).description('Desc') }).example({a: 2, i: 10}).description('Test'),
+        params: Joi.object().keys({ id: Joi.number().default(3).optional() }).optional(),
+        headers: Joi.object().keys({ key: Joi.string().optional().default('test') }).optional()
+      })
       @Put('/:id')
       public put(req: express.Request, res: express.Response) {
-
-        if ( typeof req.params.id === 'number') {
-          res.json(req.body);
-        }
-        else {
-          res.status(400).json({ msg: 'Bad Request' });
-        }
+        res.json(req.body);
       }
     }
 
@@ -185,7 +188,19 @@ describe('[e2e]server', () => {
 
       @Middleware([ middleware5 ])
       @Guard(['authGuard2', 'authGuard3'])
-      @Validate(Joi.object({ body: Joi.object().keys({ i: Joi.number().required() }).required() }))
+      @ResponseSchemas([{
+        status: 200, schema: {
+          type: 'object', required: true,
+          properties: { id: { type: 'integer', format: 'int64' }, name: { type: 'string' }, tag: { type: 'string' } }
+        }, description: 'Test description'
+      }, { status: 400, description: 'Test Error description2' }, { status: 500 }
+    ])
+      @Validate({ body: Joi.object().keys({
+         i: Joi.number().min(6).max(100).required(),
+         azza: Joi.array().items(
+           Joi.object().keys({ oha: Joi.number().default(1).max(100), zota: Joi.string().default('sas').required().example('s')  })
+        ).optional()
+        }).required() })
       @Put('/:id')
       public update(req: express.Request, res: express.Response) {
         res.json(req.body);
@@ -214,7 +229,9 @@ describe('[e2e]server', () => {
           extensions: [
             new RestServer(
               {
-                config: { hostname: 'localhost', port: 3000, joiValidationOptions: { abortEarly: false, allowUnknown: true } },
+                config: { hostname: 'localhost', port: 3000,
+                joiValidationOptions: { abortEarly: false, allowUnknown: true, presence: 'required' },
+               },
                 sequence: new Sequence([
                   new ExpressMiddleware(express.json()),
                   new ExpressMiddleware(express.urlencoded({ extended: false })),
@@ -234,6 +251,13 @@ describe('[e2e]server', () => {
 
     after(async () => {
       restServer.close();
+      const uploadedFiles = await fs.promises.readdir(path.join(os.tmpdir(), 'nodearch-file-uploads'));
+
+      for (const fileToDelete of uploadedFiles) {
+        await fs.promises.unlink(path.join(os.tmpdir(), 'nodearch-file-uploads', fileToDelete));
+      }
+
+      await fs.promises.rmdir(path.join(os.tmpdir(), 'nodearch-file-uploads'));
     });
 
     describe('all requests actions without middlewares', () => {
@@ -245,22 +269,32 @@ describe('[e2e]server', () => {
           .expect(['data1', 'data2']);
       });
 
-      it('Post Request', async () => {
+      it('Post Request Upload File', async () => {
         return request.post('/controller1')
-          .send({ ok: 1 })
-          .set('Accept', 'application/json')
+          .type('form')
+          .attach('file1', path.join(__dirname, 'server.ts'))
           .expect('Content-Type', /json/)
           .expect(200)
-          .expect({ ok: 1 });
+          .then(response => {
+            expect(response.body).to.deep.nested.include({
+              'file1.destination': '/tmp/nodearch-file-uploads', 'file1.fieldname': 'file1',
+              'file1.originalname': 'server.ts'
+            });
+          });
       });
 
-      it('Put Request', async () => {
+      it('Failed Put Request Upload File', async () => {
         return request.put('/controller1/1')
-          .send({ ok: 2 })
-          .set('Accept', 'application/json')
-          .expect('Content-Type', /json/)
-          .expect(200)
-          .expect({ id: 1, ok: 2 });
+        .type('form')
+        .attach('file2', path.join(__dirname, 'server.ts'))
+        .attach('file2', path.join(__dirname, 'server.ts'))
+        .attach('file2', path.join(__dirname, 'server.ts'))
+        .expect('Content-Type', /json/)
+        .expect(400)
+        .then(response => {
+
+          expect(response.body.message).to.equal('FileUpload: Unexpected field');
+        });
       });
 
       it('Delete Request', async () => {
@@ -287,8 +321,8 @@ describe('[e2e]server', () => {
       });
     });
 
-    describe('Midelwares Flow', () => {
-      it('pass all midelwares in right order', async () => {
+    describe('Middelwares Flow', () => {
+      it('pass all middelwares in right order', async () => {
         return request.post('/controller2')
           .send({ i: 1 })
           .set('Accept', 'application/json')
@@ -311,11 +345,11 @@ describe('[e2e]server', () => {
     describe('Joi Validation', () => {
       it('pass all midelwares & joi validation', async () => {
         return request.put('/controller2/5')
-          .send({ i: 1, a: 'test' })
+          .send({ a: 1, i: 1 })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(200)
-          .expect({ i: 4, a: 'test' });
+          .expect({ i: 4, a: 1 });
       });
 
       it('invalid joi request but failed cuz middleware', async () => {
@@ -329,15 +363,15 @@ describe('[e2e]server', () => {
 
       it('invalid joi request failed cuz joi validation', async () => {
         return request.put('/controller2/2')
-          .send({ i: 1, a: 4 })
+          .send({ i: 1, a: 'test' })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(400)
           .expect([{
-            message: '"a" must be a string',
+            message: '"body.a" must be a number',
             path: [ 'body', 'a' ],
-            type: 'string.base',
-            context: { value: 4, key: 'a', label: 'a' }
+            type: 'number.base',
+            context: { value: 'test', key: 'a', label: 'body.a' }
           }]);
       });
 
@@ -347,11 +381,11 @@ describe('[e2e]server', () => {
       it('pass all guards & middlewares & joi validation', async () => {
         return request.put('/controller3/5')
           .set('Authorization', 'auth')
-          .send({ i: 1 })
+          .send({ i: 7, azza: [{ oha: 0, zota: 'string' }] })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(200)
-          .expect({ i: 1, userId: 10, ok: 1 });
+          .expect({ userId: 10, ok: 1, i: 7, azza: [{ oha: 0, zota: 'string' }] });
       });
 
       it('invalid joi request but failed cuz auth guard', async () => {
@@ -379,13 +413,14 @@ describe('[e2e]server', () => {
           .expect('Content-Type', /json/)
           .expect(400)
           .expect([{
-            message: '"i" is required',
+            message: '"body.i" is required',
             path: [ 'body', 'i' ],
             type: 'any.required',
-            context: { key: 'i', label: 'i' }
+            context: { key: 'i', label: 'body.i' }
           }]);
       });
 
     });
+
   });
 });

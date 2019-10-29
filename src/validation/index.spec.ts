@@ -14,7 +14,7 @@ describe('validation/index', () => {
       const res: any = {};
       const next: any = sinon.spy();
 
-      getValidationMiddleware(Joi.object({ body: Joi.object({ x: Joi.number() }).required() }), { allowUnknown: true })(req, res, next);
+      getValidationMiddleware({ body: Joi.object({ x: Joi.number() }).required() }, { allowUnknown: true })(req, res, next);
 
       expect(next.calledOnce).to.be.equal(true);
     });
@@ -28,7 +28,7 @@ describe('validation/index', () => {
     const next: any = {};
     const jsonStatus = sinon.spy(res, 'status');
 
-    getValidationMiddleware(Joi.object({ body: Joi.object({ x: Joi.boolean() }).required() }), { allowUnknown: true })(req, res, next);
+    getValidationMiddleware({ body: Joi.object({ x: Joi.boolean() }).required() }, { allowUnknown: true })(req, res, next);
 
     expect(jsonStatus.withArgs(400).calledOnce).to.be.equal(true);
   });

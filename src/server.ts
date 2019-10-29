@@ -6,6 +6,7 @@ import Joi from '@hapi/joi';
 import { RouteHandler, RouteInfo } from './route';
 import { RouterFactory } from './router';
 import { Logger } from './logger';
+import { IServerConfig } from './interfaces';
 
 export class RestServer implements IAppExtension {
 
@@ -17,13 +18,12 @@ export class RestServer implements IAppExtension {
   private hostname: string;
   private joiValidationOptions?: Joi.ValidationOptions;
 
-  constructor(options: { config: { port: number, hostname: string, joiValidationOptions?: Joi.ValidationOptions }, sequence: Sequence }) {
+  constructor(options: { config: IServerConfig, sequence: Sequence }) {
     this.logger = new Logger();
     this.expressSequence = options.sequence.expressSequence;
     this.port = options.config.port;
     this.hostname = options.config.hostname;
     this.joiValidationOptions = options.config.joiValidationOptions;
-
     this.expressApp = express();
     this.server = http.createServer(this.expressApp);
   }
@@ -48,6 +48,7 @@ export class RestServer implements IAppExtension {
     this.registerSequenceMiddlewares(this.expressSequence.slice(eRegisterRoutesIndex + 1, eStartIndex));
 
     await this.start();
+
   }
 
   private getRegisterRoutesIndex() {
@@ -99,10 +100,9 @@ export class RestServer implements IAppExtension {
   }
 
   public registerRoutes(controllers: ControllerInfo[]) {
+
     const routeHandler = new RouteHandler(controllers, { joiValidationOptions: this.joiValidationOptions });
-
     const routes: RouteInfo[] = routeHandler.getRoutes();
-
     const routerFactory = new RouterFactory(routes, this.logger);
 
     this.expressApp.use(routerFactory.router);
