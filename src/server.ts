@@ -6,7 +6,6 @@ import Joi from '@hapi/joi';
 import { RouteHandler, RouteInfo } from './route';
 import { RouterFactory } from './router';
 import { Logger } from './logger';
-import { ISwaggerConfig, OpenApiSchema } from './swagger';
 import { IServerConfig } from './interfaces';
 
 export class RestServer implements IAppExtension {
