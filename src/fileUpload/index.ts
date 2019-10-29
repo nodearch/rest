@@ -37,12 +37,14 @@ export function getFileUploadMiddleware(filesUpload: IFileUpload[], options?: mu
 }
 
 function moveFilesToBody(req: Request) {
+
   if (req.file && req.file.fieldname) {
+
     req.body[req.file.fieldname] = req.file;
     delete req.file;
   }
+  else if (req.files) {
 
-  if (req.files) {
     if (Array.isArray(req.files)) {
 
       for (const file of req.files) {
@@ -57,7 +59,6 @@ function moveFilesToBody(req: Request) {
       delete req.files;
     }
   }
-
 }
 
 function errorMassage(err: Error) {
