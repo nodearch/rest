@@ -60,7 +60,7 @@ describe('swagger/open-api-schema', () => {
         expect(openApiSchema.components).to.deep.equals( {
           schemas: {
             'post-controller1-body': {
-              type: 'object',
+              type: 'object', required: true,
               properties: {  name: { type: 'string', required: true }, age: { type: 'number', required: false } }
             }
           }
@@ -105,7 +105,7 @@ describe('swagger/open-api-schema', () => {
                 limit: { type: 'number', required: false, minimum: 4 },
                 enable: { type: 'boolean', default: true, description: 'Enable', required: true, example: false, enum: [true] },
                 dates: {
-                  type: 'array', description: 'the tags', items: { type: 'string', format: 'date' },
+                  type: 'array', description: 'the tags', items: { type: 'string', format: 'date', required: true },
                   default: ['11-11-1991', '12-01-1999'], required: true, minItems: 1, maxItems: 10
                 }
               }
@@ -146,9 +146,10 @@ describe('swagger/open-api-schema', () => {
             data: Joi.object().keys({
               likes: Joi.array().items(Joi.object().keys({
                 date: Joi.date().example('11-11-1991').required(),
-                times: Joi.array().items(Joi.number().integer().valid(1, 2))
+                times: Joi.array().items(Joi.number().integer().valid(1, 2)),
+                userId: Joi.number().integer().max(100).min(1).example(1).default(2).description('User Id')
               })).unique().example([]),
-            key: Joi.string().base64(),
+            key: Joi.string().base64().min(100).default('test'),
             url: Joi.string().dataUri().example('http://test.com')
              })
               .max(10).min(12).default({ id: 'OOII-YJKK' })
@@ -189,15 +190,16 @@ describe('swagger/open-api-schema', () => {
                 type: 'object', required: false, maxProperties: 10,  minProperties: 12,
                 default: { id: 'OOII-YJKK' },
                 properties: {
-                  key: { type: 'string', format: 'byte' },
-                  url: { type: 'string', format: 'uri', example: 'http://test.com' },
+                  key: { type: 'string', format: 'byte', minLength: 100, default: 'test', required: false },
+                  url: { type: 'string', format: 'uri', example: 'http://test.com', required: false },
                   likes: {
-                    type: 'array', example: [], uniqueItems: true,
+                    type: 'array', example: [], uniqueItems: true, required: false,
                     items: {
-                      type: 'object',
+                      type: 'object', required: false,
                       properties: {
                         date: { type: 'string', required: true,  example: '11-11-1991', format: 'date' },
-                        times: { type: 'array', items: { type: 'integer', enum: [1, 2], required: false } }
+                        times: { type: 'array', items: { type: 'integer', enum: [1, 2], required: false }, required: false },
+                        userId: { type: 'integer', required: false,  example: 1, default: 2, maximum: 100, minimum: 1, description: 'User Id' }
                       }
                     }
                   }

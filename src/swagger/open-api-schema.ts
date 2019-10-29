@@ -220,13 +220,13 @@ export class OpenApiSchema {
       if (schema.flags.format) {
         rules.push({ name: 'format', value: schema.flags.format });
       }
+    }
 
-      if (schema.flags.presence) {
-        rules.push({ name: 'required', value: schema.flags.presence === 'required' ? true : false  });
-      }
-      else {
-        rules.push({ name: 'required', value: presence === 'required' ? true : false });
-      }
+    if (schema.flags && schema.flags.presence) {
+      rules.push({ name: 'required', value: schema.flags.presence === 'required' ? true : false  });
+    }
+    else {
+      rules.push({ name: 'required', value: presence === 'required' ? true : false });
     }
 
     if (schema.examples) {
