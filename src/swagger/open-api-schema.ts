@@ -246,8 +246,8 @@ export class OpenApiSchema {
     return rules;
   }
 
-  public async writeOpenAPI(): Promise<void> {
-    await fs.writeFile(path.join(__dirname, 'public/swagger.json'), JSON.stringify(this));
+  public async writeOpenAPI(dir: string): Promise<void> {
+    await fs.writeFile(path.join(dir, 'swagger.json'), JSON.stringify(this));
   }
 
 }

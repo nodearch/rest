@@ -6,7 +6,7 @@ export interface ISwaggerOptions {
 }
 
 export interface ISwaggerConfig {
-  enable: boolean;
+  path: string;
   options?: ISwaggerOptions;
 }
 

@@ -50,9 +50,9 @@ export class RestServer implements IAppExtension {
 
     this.registerSequenceMiddlewares(this.expressSequence.slice(eRegisterRoutesIndex + 1, eStartIndex));
 
-    if (this.swagger && this.swagger.enable) {
+    if (this.swagger && this.swagger.path) {
       const swagger = new OpenApiSchema(controllers, this.swagger.options, this.joiValidationOptions);
-      await swagger.writeOpenAPI();
+      await swagger.writeOpenAPI(this.swagger.path);
     }
 
     await this.start();

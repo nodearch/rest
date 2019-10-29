@@ -46,7 +46,7 @@ describe('[e2e]server', () => {
       }
 
       @Put('/:id')
-      @Upload([{name: 'file1', maxCount: 1}, {name: 'file2'}])
+      @Upload([{name: 'file1', maxCount: 1}, {name: 'file2', maxCount: 2}])
       public update(req: express.Request, res: express.Response) {
         req.body.id = Number(req.params.id);
         res.json(req.body);
@@ -222,6 +222,8 @@ describe('[e2e]server', () => {
 
     before(async () => {
 
+      await fs.promises.mkdir(path.join(os.tmpdir(), 'swagger'));
+
       archApp = new ArchApp([ Module1, Module2 ],
         {
           logger: { error: () => {}, warn: () => {}, info: () => {}, debug: () => {} },
@@ -231,7 +233,10 @@ describe('[e2e]server', () => {
               {
                 config: { hostname: 'localhost', port: 3000,
                 joiValidationOptions: { abortEarly: false, allowUnknown: true, presence: 'required' },
-                swagger: { enable: true, options: {servers: [{ url: 'http://localhost:3000' }], info: { version: '0.1.0' } } },
+                swagger: {
+                  path: path.join(os.tmpdir(), 'swagger'),
+                  options: { servers: [{ url: 'http://localhost:3000' }], info: { version: '0.1.0' } }
+                },
                },
                 sequence: new Sequence([
                   new ExpressMiddleware(express.json()),
@@ -252,7 +257,7 @@ describe('[e2e]server', () => {
 
     after(async () => {
       restServer.close();
-      await fs.promises.unlink(path.join(__dirname, '/swagger/public/swagger.json'));
+      await fs.promises.unlink(path.join(os.tmpdir(), 'swagger/swagger.json'));
       const uploadedFiles = await fs.promises.readdir(path.join(os.tmpdir(), 'nodearch-file-uploads'));
 
       for (const fileToDelete of uploadedFiles) {
@@ -260,6 +265,7 @@ describe('[e2e]server', () => {
       }
 
       await fs.promises.rmdir(path.join(os.tmpdir(), 'nodearch-file-uploads'));
+      await fs.promises.rmdir(path.join(os.tmpdir(), 'swagger'));
     });
 
     describe('all requests actions without middlewares', () => {
@@ -271,7 +277,7 @@ describe('[e2e]server', () => {
           .expect(['data1', 'data2']);
       });
 
-      it('Post Request', async () => {
+      it('Post Request Upload File', async () => {
         return request.post('/controller1')
           .type('form')
           .attach('file1', path.join(__dirname, 'server.ts'))
@@ -285,18 +291,17 @@ describe('[e2e]server', () => {
           });
       });
 
-      it('Put Request', async () => {
+      it('Failed Put Request Upload File', async () => {
         return request.put('/controller1/1')
         .type('form')
         .attach('file2', path.join(__dirname, 'server.ts'))
+        .attach('file2', path.join(__dirname, 'server.ts'))
+        .attach('file2', path.join(__dirname, 'server.ts'))
         .expect('Content-Type', /json/)
-        .expect(200)
+        .expect(400)
         .then(response => {
 
-          expect(response.body).to.deep.nested.include({
-            'file2[0].destination': '/tmp/nodearch-file-uploads', 'file2[0].fieldname': 'file2',
-            'file2[0].originalname': 'server.ts'
-          });
+          expect(response.body.message).to.equal('FileUpload: Unexpected field');
         });
       });
 
@@ -421,6 +426,130 @@ describe('[e2e]server', () => {
             type: 'any.required',
             context: { key: 'i', label: 'body.i' }
           }]);
+      });
+
+    });
+
+    describe('Swagger Doc', () => {
+
+      it('check created swagger file', async () => {
+
+        const swaggerFile = await fs.promises.readFile(path.join(os.tmpdir(), 'swagger/swagger.json'), 'utf8');
+        const openApiSchema = JSON.parse(swaggerFile);
+
+        expect(openApiSchema).to.deep.include({ openapi: '3.0.0', servers: [{ url: 'http://localhost:3000' }], info: { version: '0.1.0' } });
+
+        expect(openApiSchema.components.schemas).to.deep.equals({
+          'put-controller2-body': {
+            type: 'object', description: 'Test', required: true, example: {  a: 2, i: 10 },
+            properties: {
+              a: { type: 'number' }, i: { type: 'number', description: 'Desc', required: true, example: 20 }
+            }
+          },
+          'put-controller3-body': {
+            type: 'object',
+            properties: {
+              i: {  type: 'number', required: true, minimum: 6,  maximum: 100 },
+              azza: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    oha: { type: 'number', default: 1, required: true, maximum: 100 },
+                    zota: { type: 'string', default: 'sas', required: true, example: 's' }
+                  }
+                },
+                required: false
+              }
+            },
+            required: true
+          },
+          'put-controller3-response': {
+            type: 'object',
+            required: true,
+            properties: {
+              id: { type: 'integer', format: 'int64' },
+              name: { type: 'string' },
+              tag: { type: 'string' }
+            }
+          }
+        });
+
+        expect(openApiSchema.paths).to.deep.equals({
+          '/controller1': {
+            get: {
+              tags: ['controller1'], operationId: 'get-controller1', parameters: [], responses: { 200: { description: '' } }
+            },
+            post: {
+              tags: ['controller1'], operationId: 'post-controller1', parameters: [], responses: { 200: { description: '' } },
+              requestBody: {
+                content: {
+                  'multipart/form-data': {
+                    schema: { type: 'object', properties: { file1: { type: 'string', format: 'binary' } } }
+                  }
+                }
+              }
+            },
+            options: {
+              tags: ['controller1'], operationId: 'options-controller1', parameters: [], responses: { 200: { description: '' } }
+            }
+          },
+          '/controller1/{id}': {
+            put: {
+              tags: ['controller1'], operationId: 'put-controller1', responses: {  200: { description: '' } },
+              parameters: [{ name: 'id', in: 'path', type: 'string', required: true }],
+              requestBody: {
+                content: {
+                  'multipart/form-data': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        file1: { type: 'string', format: 'binary' },
+                        file2: { type: 'array', items: { type: 'string', format: 'binary' }, maxItems: 2 }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            delete: {
+              tags: ['controller1'], operationId: 'delete-controller1', responses: { 200: { description: '' } },
+              parameters: [{ name: 'id', in: 'path', type: 'string', required: true }]
+            }
+          },
+          '/controller2': {
+            post: { tags: ['controller2'], operationId: 'post-controller2', parameters: [], responses: { 200: { description: '' } } }
+          },
+          '/controller2/{id}': {
+            put: {
+              tags: ['controller2'], operationId: 'put-controller2', responses: { 200: { description: '' } },
+              parameters: [
+                { type: 'string', default: 3, required: true, name: 'id', in: 'path' },
+                { name: 'key', in: 'header', type: 'string', default: 'test', required: false }
+              ],
+              requestBody: {
+                required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/put-controller2-body' } } }
+              }
+            }
+          },
+          '/controller3/{id}': {
+            put: {
+              tags: ['controller3'],
+              operationId: 'put-controller3',
+              parameters: [{ name: 'id', in: 'path', type: 'string', required: true }],
+              requestBody: {
+                required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/put-controller3-body' } } }
+              },
+              responses: {
+                200: {
+                  description: 'Test description',
+                  content: { 'application/json': { schema: { $ref: '#/components/schemas/put-controller3-response' } } }
+                },
+                400: { description: 'Test Error description2' }, 500: { description: '' }
+              }
+            }
+          }
+        });
       });
 
     });

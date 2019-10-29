@@ -22,10 +22,10 @@ export function getFileUploadMiddleware(filesUpload: IFileUpload[], options?: mu
       upload = multer(multerOptions).fields(filesUpload);
     }
 
-    return upload(req, res, (err?: any) => {
+    return upload(req, res, (err?: Error) => {
 
       if (err) {
-        res.status(400).json(err);
+        res.status(400).json(errorMassage(err));
       }
       else {
         moveFilesToBody(req);
@@ -58,4 +58,16 @@ function moveFilesToBody(req: Request) {
     }
   }
 
+}
+
+function errorMassage(err: Error) {
+
+  const mul: any = multer;
+
+  if (err instanceof mul.MulterError) {
+    return { message: `FileUpload: ${err.message}` };
+  }
+  else {
+    return { message: 'FileUpload: Something went wrong while uploading file' };
+  }
 }
