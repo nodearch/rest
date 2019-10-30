@@ -54,12 +54,6 @@ export class ArrayType implements IDataType {
           }
           break;
 
-        case 'enum':
-          if (Array.isArray(constraint.value)) {
-            this.enum = constraint.value;
-          }
-          break;
-
         case 'unique':
           this.uniqueItems = true;
           break;

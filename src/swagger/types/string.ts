@@ -16,11 +16,11 @@ export class StringType implements IDataType {
   constructor(type: string, constraints?: any[]) {
     this.type = 'string';
 
+    this.setFormat(type);
+
     if (constraints) {
       this.setConstraints(constraints);
     }
-
-    this.setFormat(type);
   }
 
   setConstraints(constraints: IPropertyRule[]) {
@@ -79,20 +79,16 @@ export class StringType implements IDataType {
 
     if (type) {
       if (type === 'binary') {
-        if (this.format === 'base64') {
-          this.format = 'byte';
-        }
-        else {
-          this.format = 'binary';
-        }
+        this.format = 'binary';
       }
       else if (type === 'date') {
         this.format = 'date';
       }
     }
     else if (format) {
-      if (mapFormats[format.name]) {
-        this.format = mapFormats[format.name];
+      const mappedFormat = mapFormats[format.name] || ((typeof format.value === 'string') ? mapFormats[format.value] : null);
+      if (mappedFormat) {
+        this.format = mappedFormat;
       }
     }
   }

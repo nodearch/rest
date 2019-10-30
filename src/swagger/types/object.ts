@@ -63,11 +63,6 @@ export class ObjectType implements IDataType, IObjectType {
           }
           break;
 
-        case 'enum':
-          if (Array.isArray(constraint.value)) {
-            this.enum = constraint.value;
-          }
-          break;
         default:
           break;
       }
