@@ -2,7 +2,7 @@ import { METADATA_KEY } from '../constants';
 import { getClassMetadata, setClassMetadata, getMethodMetadata, setMethodMetadata } from './common.metadata';
 import { HttpMethod } from '../enums';
 import { IFileUpload } from '../interfaces';
-import { ValidationSchema } from '../validation';
+import { IValidationSchema } from '../validation';
 import { IHttpResponseSchema } from '../swagger';
 
 // ====> Controller Middlewares
@@ -47,11 +47,11 @@ export function setMethodHTTPPath(controllerDef: any, methodName: string, httpPa
 
 // ====> Validation Schema
 
-export function getMethodValidationSchema(controllerInstance: any, methodName: string): ValidationSchema {
+export function getMethodValidationSchema(controllerInstance: any, methodName: string): IValidationSchema {
   return getMethodMetadata(METADATA_KEY.VALIDATION_SCHEMA, controllerInstance, methodName);
 }
 
-export function setMethodValidationSchema(controllerDef: any, methodName: string, schema: ValidationSchema) {
+export function setMethodValidationSchema(controllerDef: any, methodName: string, schema: IValidationSchema) {
   setMethodMetadata(METADATA_KEY.VALIDATION_SCHEMA, controllerDef, methodName, schema);
 }
 

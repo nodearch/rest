@@ -5,7 +5,7 @@ import path from 'path';
 import { fs } from '@nodearch/core';
 import { ObjectType, ArrayType, NumberType, BoolType, StringType } from './types';
 import { IFileUpload } from '../interfaces';
-import { ValidationSchema } from '../validation';
+import { IValidationSchema } from '../validation';
 import {
   ISwaggerAPIServer, ISwaggerAppInfo, ISwaggerOptions, IParsedUrl,
   IHttpResponseSchema, JsonSchema, IPropertyRule
@@ -31,7 +31,7 @@ export class OpenApiSchema {
     for (const controller of controllers) {
       for (const method of controller.methods) {
 
-        const schema: ValidationSchema = metadata.controller.getMethodValidationSchema(controller.classInstance, method.name);
+        const schema: IValidationSchema = metadata.controller.getMethodValidationSchema(controller.classInstance, method.name);
         const httpMethod = metadata.controller.getMethodHTTPMethod(controller.classInstance, method.name);
         const httpPath = metadata.controller.getMethodHTTPPath(controller.classInstance, method.name);
         const httpResponses: IHttpResponseSchema[] = metadata.controller.getMethodHttpResponses(controller.classInstance, method.name);
@@ -55,7 +55,7 @@ export class OpenApiSchema {
     }
   }
 
-  private setRequestParams(action: any, urlParams: string[], presence: string, schema?: ValidationSchema) {
+  private setRequestParams(action: any, urlParams: string[], presence: string, schema?: IValidationSchema) {
 
     const urlParamsRules: { [key: string]: object } = {};
 
@@ -93,7 +93,7 @@ export class OpenApiSchema {
     }
   }
 
-  private setRequestBody(action: any, presence: string, schema?: ValidationSchema, files?: IFileUpload[]) {
+  private setRequestBody(action: any, presence: string, schema?: IValidationSchema, files?: IFileUpload[]) {
 
     if (files && files.length > 0) {
 

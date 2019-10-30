@@ -3,7 +3,7 @@ import { RouteInfo } from './route.info';
 import { getGuardsMiddleware } from '../auth';
 import * as metadata from '../metadata';
 import { IRouteHandlerOptions } from './handler-options.interface';
-import { getValidationMiddleware, ValidationSchema } from '../validation';
+import { getValidationMiddleware, IValidationSchema } from '../validation';
 import { getFileUploadMiddleware } from '../fileUpload';
 
 export class RouteHandler {
@@ -41,7 +41,7 @@ export class RouteHandler {
       const httpPath = metadata.controller.getMethodHTTPPath(controllerInfo.classInstance, methodInfo.name);
       const fullHttpPath = routePrefix ? routePrefix + httpPath : httpPath;
 
-      const validationSchema: ValidationSchema = metadata.controller.getMethodValidationSchema(controllerInfo.classInstance, methodInfo.name);
+      const validationSchema: IValidationSchema = metadata.controller.getMethodValidationSchema(controllerInfo.classInstance, methodInfo.name);
       const fileUpload = metadata.controller.getMethodFileUpload(controllerInfo.classInstance, methodInfo.name);
 
       let validationMiddleware, fileUploadMiddleware;

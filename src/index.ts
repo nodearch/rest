@@ -2,6 +2,7 @@ import { RestServer } from './server';
 export * from './decorators';
 export * from './interfaces';
 export * from './sequence';
+export * from './validation';
 import { HttpMethod } from './enums';
 import express from 'express';
 import Joi from '@hapi/joi';

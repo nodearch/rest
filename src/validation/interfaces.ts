@@ -1,7 +1,7 @@
 
 import Joi from '@hapi/joi';
 
-export interface ValidationSchema {
+export interface IValidationSchema {
 
   headers?: Joi.ObjectSchema;
   query?: Joi.ObjectSchema;

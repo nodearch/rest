@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
-import { RequestData } from '../interfaces';
+import { IRequestData } from '../interfaces';
 import Joi from '@hapi/joi';
-import { ValidationSchema } from './index';
+import { IValidationSchema } from './interfaces';
 
-export function getValidationMiddleware(validationSchema: ValidationSchema, validationOptions?: Joi.ValidationOptions) {
+export function getValidationMiddleware(validationSchema: IValidationSchema, validationOptions?: Joi.ValidationOptions) {
   return function(req: Request, res: Response, next: any) {
 
-    const dataToValidate: RequestData = {};
+    const dataToValidate: IRequestData = {};
     const objectProperties: any = validationSchema;
 
     Object.assign(dataToValidate, {
