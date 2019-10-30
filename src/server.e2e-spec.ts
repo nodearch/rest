@@ -14,6 +14,9 @@ import { ResponseSchemas } from './swagger';
 import { Upload } from './decorators';
 import { expect } from 'chai';
 
+
+const fakeLogger = { error: () => { }, warn: () => { }, info: () => { }, debug: () => { } };
+
 describe('[e2e]server', () => {
 
   describe('RestServer', () => {
@@ -46,7 +49,7 @@ describe('[e2e]server', () => {
       }
 
       @Put('/:id')
-      @Upload([{name: 'file1', maxCount: 1}, {name: 'file2', maxCount: 2}])
+      @Upload([{ name: 'file1', maxCount: 1 }, { name: 'file2', maxCount: 2 }])
       public update(req: express.Request, res: express.Response) {
         req.body.id = Number(req.params.id);
         res.json(req.body);
@@ -58,7 +61,7 @@ describe('[e2e]server', () => {
       }
 
       @Options('/')
-      public options(req: express.Request, res: express.Response){
+      public options(req: express.Request, res: express.Response) {
         res.json(['Get', 'Post']);
       }
     }
@@ -93,11 +96,11 @@ describe('[e2e]server', () => {
       }
     };
 
-    @Middleware([ middleware1, middleware2 ])
+    @Middleware([middleware1, middleware2])
     @Controller('controller2')
     class Controller2 {
 
-      constructor() {}
+      constructor() { }
 
       @Middleware(middleware3)
       @Post('/')
@@ -107,7 +110,7 @@ describe('[e2e]server', () => {
 
       @Middleware(middleware3)
       @Validate({
-        body: Joi.object().keys({ a: Joi.number(), i: Joi.number().example(20).description('Desc') }).example({a: 2, i: 10}).description('Test'),
+        body: Joi.object().keys({ a: Joi.number(), i: Joi.number().example(20).description('Desc') }).example({ a: 2, i: 10 }).description('Test'),
         params: Joi.object().keys({ id: Joi.number().default(3).optional() }).optional(),
         headers: Joi.object().keys({ key: Joi.string().optional().default('test') }).optional()
       })
@@ -123,12 +126,12 @@ describe('[e2e]server', () => {
       providers: [Provider1],
       exports: []
     })
-    class Module1 {}
+    class Module1 { }
 
     @GuardProvider('authGuard1')
     @AuthGuard()
     class Guard1 implements IGuard {
-      constructor() {}
+      constructor() { }
       public guard(req: express.Request, res: express.Response, next: any) {
         if (req.headers.authorization === 'auth') {
           req.body.userId = 1;
@@ -143,7 +146,7 @@ describe('[e2e]server', () => {
     @GuardProvider('authGuard2')
     @AuthGuard()
     class Guard2 implements IAuthGuard {
-      constructor() {}
+      constructor() { }
       public guard(req: express.Request, res: express.Response, next: any) {
         req.body.userId = req.body.userId + 5;
         next();
@@ -153,7 +156,7 @@ describe('[e2e]server', () => {
     @GuardProvider('authGuard3')
     @AuthGuard()
     class Guard3 implements IAuthGuard {
-      constructor() {}
+      constructor() { }
       public guard(req: express.Request, res: express.Response, next: any) {
         req.body.userId = req.body.userId + 4;
         next();
@@ -161,14 +164,14 @@ describe('[e2e]server', () => {
     }
 
     const middleware4 = (req: express.Request, res: express.Response, next: any) => {
-      if ( req.params.id === '5' ) {
+      if (req.params.id === '5') {
         req.body.ok = 1;
       }
       next();
     };
 
     const middleware5 = (req: express.Request, res: express.Response, next: any) => {
-      if ( req.params.id === '1' ) {
+      if (req.params.id === '1') {
         res.status(400).json({ msg: 'invalid id' });
       }
       else {
@@ -177,7 +180,7 @@ describe('[e2e]server', () => {
     };
 
     @Controller('controller3')
-    @Middleware([ middleware4 ])
+    @Middleware([middleware4])
     @Guard(['authGuard1'])
     class Controller3 {
 
@@ -186,7 +189,7 @@ describe('[e2e]server', () => {
         this.s1 = 12;
       }
 
-      @Middleware([ middleware5 ])
+      @Middleware([middleware5])
       @Guard(['authGuard2', 'authGuard3'])
       @ResponseSchemas([{
         status: 200, schema: {
@@ -194,13 +197,15 @@ describe('[e2e]server', () => {
           properties: { id: { type: 'integer', format: 'int64' }, name: { type: 'string' }, tag: { type: 'string' } }
         }, description: 'Test description'
       }, { status: 400, description: 'Test Error description2' }, { status: 500 }
-    ])
-      @Validate({ body: Joi.object().keys({
-         i: Joi.number().min(6).max(100).required(),
-         azza: Joi.array().items(
-           Joi.object().keys({ oha: Joi.number().default(1).max(100), zota: Joi.string().default('sas').required().example('s')  })
-        ).optional()
-        }).required() })
+      ])
+      @Validate({
+        body: Joi.object().keys({
+          i: Joi.number().min(6).max(100).required(),
+          azza: Joi.array().items(
+            Joi.object().keys({ oha: Joi.number().default(1).max(100), zota: Joi.string().default('sas').required().example('s') })
+          ).optional()
+        }).required()
+      })
       @Put('/:id')
       public update(req: express.Request, res: express.Response) {
         res.json(req.body);
@@ -214,7 +219,7 @@ describe('[e2e]server', () => {
       providers: [],
       exports: []
     })
-    class Module2 {}
+    class Module2 { }
 
     let archApp: ArchApp;
     let restServer: RestServer;
@@ -222,16 +227,22 @@ describe('[e2e]server', () => {
 
     before(async () => {
 
-      archApp = new ArchApp([ Module1, Module2 ],
+      archApp = new ArchApp([Module1, Module2],
         {
-          logger: { error: () => {}, warn: () => {}, info: () => {}, debug: () => {} },
+          logger: { error: () => { }, warn: () => { }, info: () => { }, debug: () => { } },
           guards: [Guard1, Guard2, Guard3],
           extensions: [
             new RestServer(
               {
-                config: { hostname: 'localhost', port: 3000,
-                joiValidationOptions: { abortEarly: false, allowUnknown: true, presence: 'required' },
-               },
+                config: {
+                  hostname: 'localhost', port: 3000,
+                  joiValidationOptions: {
+                    abortEarly: false,
+                    allowUnknown: true,
+                    presence: 'required'
+                  },
+                },
+                logger: fakeLogger,
                 sequence: new Sequence([
                   new ExpressMiddleware(express.json()),
                   new ExpressMiddleware(express.urlencoded({ extended: false })),
@@ -285,16 +296,16 @@ describe('[e2e]server', () => {
 
       it('Failed Put Request Upload File', async () => {
         return request.put('/controller1/1')
-        .type('form')
-        .attach('file2', path.join(__dirname, 'server.ts'))
-        .attach('file2', path.join(__dirname, 'server.ts'))
-        .attach('file2', path.join(__dirname, 'server.ts'))
-        .expect('Content-Type', /json/)
-        .expect(400)
-        .then(response => {
+          .type('form')
+          .attach('file2', path.join(__dirname, 'server.ts'))
+          .attach('file2', path.join(__dirname, 'server.ts'))
+          .attach('file2', path.join(__dirname, 'server.ts'))
+          .expect('Content-Type', /json/)
+          .expect(400)
+          .then(response => {
 
-          expect(response.body.message).to.equal('FileUpload: Unexpected field');
-        });
+            expect(response.body.message).to.equal('FileUpload: Unexpected field');
+          });
       });
 
       it('Delete Request', async () => {
@@ -369,7 +380,7 @@ describe('[e2e]server', () => {
           .expect(400)
           .expect([{
             message: '"body.a" must be a number',
-            path: [ 'body', 'a' ],
+            path: ['body', 'a'],
             type: 'number.base',
             context: { value: 'test', key: 'a', label: 'body.a' }
           }]);
@@ -407,14 +418,14 @@ describe('[e2e]server', () => {
 
       it('invalid joi request failed cuz joi validation', async () => {
         return request.put('/controller3/2')
-        .set('Authorization', 'auth')
+          .set('Authorization', 'auth')
           .send({ test: 1 })
           .set('Accept', 'application/json')
           .expect('Content-Type', /json/)
           .expect(400)
           .expect([{
             message: '"body.i" is required',
-            path: [ 'body', 'i' ],
+            path: ['body', 'i'],
             type: 'any.required',
             context: { key: 'i', label: 'body.i' }
           }]);

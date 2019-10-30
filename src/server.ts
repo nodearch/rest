@@ -1,11 +1,10 @@
-import { ILogger, IAppExtension, IArchApp, ControllerInfo } from '@nodearch/core';
+import { ILogger, IAppExtension, IArchApp, ControllerInfo, Logger } from '@nodearch/core';
 import express from 'express';
 import * as http from 'http';
 import { Sequence, ExpressSequence, StartExpress, ExpressMiddleware, RegisterRoutes } from './sequence';
 import Joi from '@hapi/joi';
 import { RouteHandler, RouteInfo } from './route';
 import { RouterFactory } from './router';
-import { Logger } from './logger';
 import { IServerConfig } from './interfaces';
 
 export class RestServer implements IAppExtension {
@@ -18,8 +17,8 @@ export class RestServer implements IAppExtension {
   private hostname: string;
   private joiValidationOptions?: Joi.ValidationOptions;
 
-  constructor(options: { config: IServerConfig, sequence: Sequence }) {
-    this.logger = new Logger();
+  constructor(options: { config: IServerConfig, sequence: Sequence, logger?: ILogger }) {
+    this.logger = options.logger ? options.logger : new Logger();
     this.expressSequence = options.sequence.expressSequence;
     this.port = options.config.port;
     this.hostname = options.config.hostname;
@@ -29,7 +28,6 @@ export class RestServer implements IAppExtension {
   }
 
   async onInit(archApp: IArchApp) {
-    this.logger = archApp.logger;
   }
 
   async onStart(archApp: IArchApp) {
@@ -48,7 +46,6 @@ export class RestServer implements IAppExtension {
     this.registerSequenceMiddlewares(this.expressSequence.slice(eRegisterRoutesIndex + 1, eStartIndex));
 
     await this.start();
-
   }
 
   private getRegisterRoutesIndex() {
