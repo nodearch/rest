@@ -86,7 +86,7 @@ export class StringType implements IDataType {
       }
     }
     else if (format) {
-      const mappedFormat = mapFormats[format.name] || ((typeof format.value === 'string') ? mapFormats[format.value] : null);
+      const mappedFormat: string = mapFormats[format.name] || ((typeof format.value === 'string') ? mapFormats[format.value] : null);
       if (mappedFormat) {
         this.format = mappedFormat;
       }
