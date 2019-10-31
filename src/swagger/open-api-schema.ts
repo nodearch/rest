@@ -36,9 +36,12 @@ export class OpenApiSchema {
         const httpPath = metadata.controller.getMethodHTTPPath(controller.classInstance, method.name);
         const httpResponses: IHttpResponseSchema[] = metadata.controller.getMethodHttpResponses(controller.classInstance, method.name);
         const filesUpload: IFileUpload[] = metadata.controller.getMethodFileUpload(controller.classInstance, method.name);
-        const fullHttpPath = path.join(`/${controller.prefix}` || '', httpPath);
+        const fullHttpPath = path.join(`/${controller.prefix || ''}`, httpPath);
         const urlWithParams = pathsUrlParams[fullHttpPath] || this.getUrlWithParams(fullHttpPath);
-        const action: any = { tags: [ controller.prefix ], operationId: `${httpMethod}-${controller.prefix}`, parameters: [] };
+        const action: any = {
+          tags: [ controller.prefix || 'base' ], parameters: [],
+          operationId: `${httpMethod}${controller.prefix ? `-${controller.prefix}` : ''}`
+        };
         const presence = joiOptions && joiOptions.presence ? joiOptions.presence : 'required';
 
         this.setRequestParams(action, urlWithParams.pathParams, presence, schema) ;
@@ -129,7 +132,7 @@ export class OpenApiSchema {
   private setResponses(action: any, httpResponses?: IHttpResponseSchema[]) {
     action.responses = {};
 
-    if (httpResponses) {
+    if (httpResponses && httpResponses.length > 0) {
       for (const httpRes of httpResponses) {
         action.responses[httpRes.status] = { description: httpRes.description || '' };
 

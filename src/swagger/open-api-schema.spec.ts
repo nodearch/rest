@@ -34,12 +34,12 @@ describe('swagger/open-api-schema', () => {
 
         const controllers: any[] = [{ classInstance: {}, prefix: 'controller1', methods: [{ name: 'find' }] }];
 
-        const openApiSchema = new OpenApiSchema(controllers);
+        const openApiSchema = new OpenApiSchema(controllers, { info: {} });
         expect(openApiSchema).to.deep.equals({
           openapi: '3.0.0', servers: [], info: {}, components: { schemas: {} },
           paths: {
             '/controller1': {
-              get: { tags: ['controller1'], operationId: 'get-controller1', parameters: [], responses: {} }
+              get: { tags: ['controller1'], operationId: 'get-controller1', parameters: [], responses: { 200: { description: '' } } }
             }
           }
         });
@@ -47,7 +47,7 @@ describe('swagger/open-api-schema', () => {
 
       it('with joi but swagger options or no response schema', () => {
 
-        const controllers: any[] = [{ classInstance: {}, prefix: 'controller1', methods: [{ name: 'create' }] }];
+        const controllers: any[] = [{ classInstance: {}, methods: [{ name: 'create' }] }];
         getMethodHTTPMethod.returns(HttpMethod.POST);
         getMethodHTTPPath.returns('/test/:id/test/:name');
         getMethodValidationSchema.returns({
@@ -59,7 +59,7 @@ describe('swagger/open-api-schema', () => {
 
         expect(openApiSchema.components).to.deep.equals( {
           schemas: {
-            'post-controller1-body': {
+            'post-body': {
               type: 'object', required: true,
               properties: {  name: { type: 'string', required: true }, age: { type: 'number', required: false } }
             }
@@ -67,9 +67,9 @@ describe('swagger/open-api-schema', () => {
         });
 
         expect(openApiSchema.paths).to.deep.nested.include({
-          '/controller1/test/{id}/test/{name}.post.tags': ['controller1'],
-          '/controller1/test/{id}/test/{name}.post.operationId': 'post-controller1',
-          '/controller1/test/{id}/test/{name}.post.parameters': [
+          '/test/{id}/test/{name}.post.tags': ['base'],
+          '/test/{id}/test/{name}.post.operationId': 'post',
+          '/test/{id}/test/{name}.post.parameters': [
             { type: 'string', required: true, pattern: '/^./', name: 'name', in: 'path' },
             { name: 'id', in: 'path', type: 'string', required: true }
           ],
@@ -86,7 +86,7 @@ describe('swagger/open-api-schema', () => {
             id: Joi.string().guid().max(7).required().example(2),
             limit: Joi.number().min(4).optional(),
             enable: Joi.boolean().default(true).example(false).valid(true).description('Enable'),
-            dates: Joi.array().items(Joi.date()).default(['11-11-1991', '12-01-1999']).min(1).max(10).description('the tags')
+            dates: Joi.array().items(Joi.date().iso()).default(['11-11-1991', '12-01-1999']).min(1).max(10).description('the tags')
            }).example({ id: 2 }).description('Update Data'),
           params: Joi.object().keys({ name: Joi.string().pattern(/^./).optional() }),
           headers: Joi.object().keys({ apiKey: Joi.string().pattern(/^./).required(), auth: Joi.string().regex(/^./).optional() })
@@ -205,7 +205,7 @@ describe('swagger/open-api-schema', () => {
                   }
                 }
               },
-              binaryFile: { type: 'string', format: 'binary', required: false },
+              binaryFile: { type: 'string', format: 'byte', required: false },
               file1: { type: 'string', format: 'binary' },
               file2: { type: 'array', maxItems: 3, items: { type: 'string', format: 'binary' } }
             }
