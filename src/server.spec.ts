@@ -116,19 +116,6 @@ describe('server', () => {
     })
     class Module2 {}
 
-    // describe('onInit', () => {
-    //   it('initiate server', async () => {
-
-    //     const restServer: any = new RestServer({ config: { hostname: 'localhost', port: 3000 }, sequence: { expressSequence: [] } });
-
-    //     const archApp: any = { logger: { log: true } };
-    //     await restServer.onInit(archApp);
-
-    //     expect(restServer.logger).to.be.deep.equal({ log: true });
-
-    //   });
-    // });
-
     describe('onStart', () => {
       let restServer: any;
 
@@ -155,7 +142,6 @@ describe('server', () => {
 
         });
 
-        await restServer.onInit(archApp);
         await restServer.onStart(archApp);
 
         expect(restServer.server).to.be.instanceOf(http.Server);
@@ -173,8 +159,6 @@ describe('server', () => {
           logger: fakeLogger,
           sequence: new Sequence([ new RegisterRoutes() ])
         });
-
-        await restServer.onInit(archApp);
 
         try {
           await restServer.onStart(archApp);
@@ -200,8 +184,6 @@ describe('server', () => {
           sequence: new Sequence([ new StartExpress() ])
         });
 
-        await restServer.onInit(archApp);
-
         try {
           await restServer.onStart(archApp);
 
@@ -226,7 +208,6 @@ describe('server', () => {
           sequence: new Sequence([ new RegisterRoutes(), new StartExpress() ])
         });
 
-        await restServer.onInit(archApp);
         await restServer.onStart(archApp);
 
         try {
@@ -235,7 +216,6 @@ describe('server', () => {
             logger: fakeLogger,
             sequence: new Sequence([ new RegisterRoutes(), new StartExpress() ])
           });
-          await duplicateRestServer.onInit(archApp);
           await duplicateRestServer.onStart(archApp);
         } catch (err) {
           error = err;

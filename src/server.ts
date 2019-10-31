@@ -27,9 +27,6 @@ export class RestServer implements IAppExtension {
     this.server = http.createServer(this.expressApp);
   }
 
-  async onInit(archApp: IArchApp) {
-  }
-
   async onStart(archApp: IArchApp) {
     const controllers: ControllerInfo[] = archApp.getControllers();
     await this.init(controllers);
