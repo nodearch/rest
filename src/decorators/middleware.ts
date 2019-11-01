@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import * as metadata from '../metadata';
 
 type ClassMethodDecorator = (target: Function | Object, propertyKey?: string) => void;
-type Middleware = (req: Request, res: Response, next?: (error?: any) => void) => void;
+type Middleware = (req: Request, res: Response, next?: NextFunction) => void;
 
 export function Middleware(middleWares: Middleware[] | Middleware): ClassMethodDecorator {
   return function(target: any, propertyKey?: string): void {
