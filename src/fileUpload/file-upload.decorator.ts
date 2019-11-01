@@ -1,5 +1,5 @@
 import * as metadata from '../metadata';
-import { IFileUpload } from '../interfaces';
+import { IFileUpload } from './file-upload.interface';
 
 export function Upload(files: string | string[] | IFileUpload | IFileUpload[]): MethodDecorator {
   return <MethodDecorator> function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {

@@ -2,27 +2,25 @@ import { ILogger, IAppExtension, IArchApp, ControllerInfo, Logger } from '@nodea
 import express from 'express';
 import * as http from 'http';
 import { Sequence, ExpressSequence, StartExpress, ExpressMiddleware, RegisterRoutes } from './sequence';
-import Joi from '@hapi/joi';
-import { RouteHandler, RouteInfo } from './route';
-import { RouterFactory } from './router';
 import { IServerConfig } from './interfaces';
+import { RestControllerInfo } from './controller';
 
 export class RestServer implements IAppExtension {
 
   private server: http.Server;
-  public expressApp: express.Application;
   private logger: ILogger;
   private expressSequence: ExpressSequence[];
-  private port: number;
-  private hostname: string;
-  private joiValidationOptions?: Joi.ValidationOptions;
+  controllers: RestControllerInfo[];
+  config: IServerConfig;
+  expressApp: express.Application;
+
 
   constructor(options: { config: IServerConfig, sequence: Sequence, logger?: ILogger }) {
+    this.controllers = [];
+    this.config = options.config;
     this.logger = options.logger ? options.logger : new Logger();
     this.expressSequence = options.sequence.expressSequence;
-    this.port = options.config.port;
-    this.hostname = options.config.hostname;
-    this.joiValidationOptions = options.config.joiValidationOptions;
+
     this.expressApp = express();
     this.server = http.createServer(this.expressApp);
   }
@@ -38,7 +36,11 @@ export class RestServer implements IAppExtension {
 
     this.registerSequenceMiddlewares(this.expressSequence.slice(0, eRegisterRoutesIndex));
 
-    this.registerRoutes(controllers);
+    controllers.forEach(ctrl => {
+      const restCtrl = new RestControllerInfo(ctrl, this.config, this.logger);
+      this.expressApp.use(restCtrl.router);
+      this.controllers.push(restCtrl);
+    });
 
     this.registerSequenceMiddlewares(this.expressSequence.slice(eRegisterRoutesIndex + 1, eStartIndex));
 
@@ -76,14 +78,14 @@ export class RestServer implements IAppExtension {
   async start(): Promise<void> {
     return new Promise((resolve, reject) => {
 
-      this.server.listen(this.port, this.hostname);
+      this.server.listen(this.config.port, this.config.hostname);
 
       this.server.on('error', (err) => {
         reject(err);
       });
 
       this.server.on('listening', () => {
-        this.logger.info(`Server running at: ${this.hostname}:${this.port}`);
+        this.logger.info(`Server running at: ${this.config.hostname}:${this.config.port}`);
         resolve();
       });
     });
@@ -91,14 +93,5 @@ export class RestServer implements IAppExtension {
 
   close(): void {
     this.server.close();
-  }
-
-  public registerRoutes(controllers: ControllerInfo[]) {
-
-    const routeHandler = new RouteHandler(controllers, { joiValidationOptions: this.joiValidationOptions });
-    const routes: RouteInfo[] = routeHandler.getRoutes();
-    const routerFactory = new RouterFactory(routes, this.logger);
-
-    this.expressApp.use(routerFactory.router);
   }
 }

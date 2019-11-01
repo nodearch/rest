@@ -1,10 +1,20 @@
 import { Request, Response } from 'express';
 import { IRequestData } from '../interfaces';
 import Joi from '@hapi/joi';
-import { IValidationSchema } from './interfaces';
+import { IValidationSchema } from './validation-schema.interface';
+import * as metadata from '../metadata';
+import { ControllerInfo, IControllerMethod } from '@nodearch/core';
 
-export function getValidationMiddleware(validationSchema: IValidationSchema, validationOptions?: Joi.ValidationOptions) {
-  return function(req: Request, res: Response, next: any) {
+export function getValidationMiddleware(
+  controllerInfo: ControllerInfo,
+  methodInfo: IControllerMethod,
+  validationOptions?: Joi.ValidationOptions
+) {
+  const validationSchema: IValidationSchema = metadata.controller.getMethodValidationSchema(controllerInfo.classInstance, methodInfo.name);
+
+  if (!validationSchema) return;
+
+  return function (req: Request, res: Response, next: any) {
 
     const dataToValidate: IRequestData = {};
     const objectProperties: any = validationSchema;

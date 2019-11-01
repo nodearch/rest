@@ -1,4 +1,3 @@
 export * from './middleware';
-export * from './validate';
+export * from '../validation/validate.decorator';
 export * from './http-methods';
-export * from './file-upload';

@@ -1,7 +1,7 @@
 import { METADATA_KEY } from '../constants';
 import { getClassMetadata, setClassMetadata, getMethodMetadata, setMethodMetadata } from './common.metadata';
 import { HttpMethod } from '../enums';
-import { IFileUpload } from '../interfaces';
+import { IFileUpload } from '../fileUpload/file-upload.interface';
 import { IValidationSchema } from '../validation';
 import { IHttpResponseSchema } from '../swagger';
 
