@@ -122,7 +122,11 @@ export class RestServer implements IAppExtension {
         const routeInfo = this.getMethodRouteInfo(ctrlInstance, ctrlMethod);
 
         if (routePrefix) {
-          routeInfo.path = routePrefix + routeInfo.path;
+          console.log('routeInfo', routeInfo);
+          console.log('routePrefix', routePrefix);
+          console.log('before', routeInfo.path);
+          routeInfo.fullPath = routePrefix + routeInfo.path;
+          console.log('after', routeInfo.path);
         }
 
         const methodMiddlewares = this.getMethodMiddlewares(ctrlInstance, ctrlMethod);
@@ -168,33 +172,35 @@ export class RestServer implements IAppExtension {
   }
 
   private routerMapping(routeInfo: RouteInfo, middlewares: any[], handler: any, ctrlInstance: any) {
+    if (!routeInfo.fullPath) return;
+
     switch (routeInfo.method) {
       case HttpMethod.GET:
-        this.router.get(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.get(routeInfo.fullPath, middlewares, handler.bind(ctrlInstance));
         break;
       case HttpMethod.POST:
-        this.router.post(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.post(routeInfo.fullPath, middlewares, handler.bind(ctrlInstance));
         break;
       case HttpMethod.PUT:
-        this.router.put(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.put(routeInfo.fullPath, middlewares, handler.bind(ctrlInstance));
         break;
       case HttpMethod.DELETE:
-        this.router.delete(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.delete(routeInfo.fullPath, middlewares, handler.bind(ctrlInstance));
         break;
       case HttpMethod.HEAD:
-        this.router.head(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.head(routeInfo.fullPath, middlewares, handler.bind(ctrlInstance));
         break;
       case HttpMethod.PATCH:
-        this.router.patch(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.patch(routeInfo.fullPath, middlewares, handler.bind(ctrlInstance));
         break;
       case HttpMethod.OPTIONS:
-        this.router.options(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.options(routeInfo.fullPath, middlewares, handler.bind(ctrlInstance));
         break;
       case HttpMethod.ALL:
-        this.router.all(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.all(routeInfo.fullPath, middlewares, handler.bind(ctrlInstance));
         break;
       default:
-        this.router.all(routeInfo.path, middlewares, handler.bind(ctrlInstance));
+        this.router.all(routeInfo.fullPath, middlewares, handler.bind(ctrlInstance));
     }
   }
 
