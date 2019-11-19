@@ -1,6 +1,6 @@
 {
   "name": "@nodearch/rest",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "nodearch rest server",
   "main": "./dist/index.js",
   "scripts": {
