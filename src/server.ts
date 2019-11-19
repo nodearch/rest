@@ -122,11 +122,7 @@ export class RestServer implements IAppExtension {
         const routeInfo = this.getMethodRouteInfo(ctrlInstance, ctrlMethod);
 
         if (routePrefix) {
-          console.log('routeInfo', routeInfo);
-          console.log('routePrefix', routePrefix);
-          console.log('before', routeInfo.path);
           routeInfo.fullPath = routePrefix + routeInfo.path;
-          console.log('after', routeInfo.path);
         }
 
         const methodMiddlewares = this.getMethodMiddlewares(ctrlInstance, ctrlMethod);
