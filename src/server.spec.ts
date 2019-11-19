@@ -1,12 +1,11 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { RestServer } from './server';
-import { ArchApp, Injectable, Controller, Module, GuardProvider, Guard } from '@nodearch/core';
+import { ArchApp, Injectable, Controller, Module } from '@nodearch/core';
 import { Get, Post, Validate, Middleware, Put, Head, Patch, Delete, Options } from './decorators';
 import { RegisterRoutes, StartExpress, ExpressMiddleware, Sequence } from './sequence';
 import * as http from 'http';
 import * as Joi from '@hapi/joi';
-import { AuthGuard } from './auth';
 import express = require('express');
 
 const fakeLogger = { error: () => { }, warn: () => { }, info: () => { }, debug: () => { } };
@@ -51,21 +50,7 @@ describe('server', () => {
     })
     class Module1 {}
 
-    @GuardProvider('guard1')
-    class Guard1 {
-      constructor() {}
-      public guard() { }
-    }
-
-    @GuardProvider('guard2')
-    @AuthGuard()
-    class Guard2 {
-      constructor() {}
-      public guard() { }
-    }
-
     @Controller('controller2')
-    @Guard(['guard1'])
     class Controller2 {
 
       private readonly s1: number;
@@ -79,7 +64,6 @@ describe('server', () => {
         return ['data1', 'data2'];
       }
 
-      @Guard(['guard2'])
       @Middleware([() => {}])
       @Validate({ body: Joi.object() })
       @Put('/:id')

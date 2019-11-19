@@ -8,8 +8,8 @@ import Joi from '@hapi/joi';
 
 describe('swagger/open-api-schema', () => {
 
-  let getMethodHTTPMethod: SinonStub, getMethodHTTPPath: SinonStub, getMethodValidationSchema: SinonStub,
-    getMethodHttpResponses: SinonStub, getMethodFileUpload: SinonStub;
+  let getMethodHTTPMethod: SinonStub<any, any>, getMethodHTTPPath: SinonStub<any, any>, getMethodValidationSchema: SinonStub<any, any>,
+    getMethodHttpResponses: SinonStub<any, any>, getMethodFileUpload: SinonStub<any, any>;
 
   beforeEach(() => {
     getMethodHTTPMethod = stub(metadata.controller, 'getMethodHTTPMethod').returns(HttpMethod.GET);

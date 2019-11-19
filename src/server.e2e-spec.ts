@@ -1,14 +1,13 @@
 import { describe, it } from 'mocha';
 import supertest from 'supertest';
 import { RestServer } from './server';
-import { ArchApp, Injectable, Controller, Module, GuardProvider, Guard, IGuard } from '@nodearch/core';
+import { ArchApp, Injectable, Controller, Module, IGuard } from '@nodearch/core';
 import { Get, Post, Validate, Middleware, Put, Delete, Options } from './decorators';
 import { RegisterRoutes, StartExpress, ExpressMiddleware, Sequence } from './sequence';
 import * as Joi from '@hapi/joi';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { AuthGuard, IAuthGuard } from './auth';
 import express = require('express');
 import { ResponseSchemas } from './swagger';
 import { Upload } from './fileUpload';
@@ -128,41 +127,6 @@ describe('[e2e]server', () => {
     })
     class Module1 { }
 
-    @GuardProvider('authGuard1')
-    @AuthGuard()
-    class Guard1 implements IGuard {
-      constructor() { }
-      public guard(req: express.Request, res: express.Response, next: any) {
-        if (req.headers.authorization === 'auth') {
-          req.body.userId = 1;
-          next();
-        }
-        else {
-          res.status(403).json({ msg: 'unAuth' });
-        }
-      }
-    }
-
-    @GuardProvider('authGuard2')
-    @AuthGuard()
-    class Guard2 implements IAuthGuard {
-      constructor() { }
-      public guard(req: express.Request, res: express.Response, next: any) {
-        req.body.userId = req.body.userId + 5;
-        next();
-      }
-    }
-
-    @GuardProvider('authGuard3')
-    @AuthGuard()
-    class Guard3 implements IAuthGuard {
-      constructor() { }
-      public guard(req: express.Request, res: express.Response, next: any) {
-        req.body.userId = req.body.userId + 4;
-        next();
-      }
-    }
-
     const middleware4 = (req: express.Request, res: express.Response, next: any) => {
       if (req.params.id === '5') {
         req.body.ok = 1;
@@ -181,7 +145,6 @@ describe('[e2e]server', () => {
 
     @Controller('controller3')
     @Middleware([middleware4])
-    @Guard(['authGuard1'])
     class Controller3 {
 
       private readonly s1: number;
@@ -190,7 +153,6 @@ describe('[e2e]server', () => {
       }
 
       @Middleware([middleware5])
-      @Guard(['authGuard2', 'authGuard3'])
       @ResponseSchemas([{
         status: 200, schema: {
           type: 'object', required: true,
@@ -230,7 +192,6 @@ describe('[e2e]server', () => {
       archApp = new ArchApp([Module1, Module2],
         {
           logger: { error: () => { }, warn: () => { }, info: () => { }, debug: () => { } },
-          guards: [Guard1, Guard2, Guard3],
           extensions: [
             new RestServer(
               {
