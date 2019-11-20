@@ -38,22 +38,32 @@ export class RestControllerInfo {
       const fileUploadMiddleware = getFileUploadMiddleware(this.controllerInfo, methodInfo, this.serverConfig.fileUploadOptions);
       const validationSchemaMiddleware = getValidationMiddleware(this.controllerInfo, methodInfo, this.serverConfig.joiValidationOptions);
 
+      // add Guards
+      if (methodInfo.execGuards) {
+        middlewares.push(this.guardMiddlewareFactory(methodInfo));
+      }
+
+      // add fileUpload
       if (fileUploadMiddleware) {
         middlewares.push(fileUploadMiddleware);
       }
 
+      // Add Controller Middlewares then method Middlewares
       middlewares.push(...controllerMiddlewares);
       middlewares.push(...controllerMethodMiddlewares);
 
+      // Add Validation Middleware
       if (validationSchemaMiddleware) {
         middlewares.push(validationSchemaMiddleware);
       }
 
+      // Add route handler
       middlewares.push(
         this.controllerInfo.classInstance[methodInfo.name]
           .bind(this.controllerInfo.classInstance)
       );
 
+      // register route
       this.router[httpMethod](fullHttpPath, middlewares);
 
       this.logger.info(`Register HTTP Route - ${httpMethod.toUpperCase()} ${fullHttpPath}`);
@@ -73,5 +83,31 @@ export class RestControllerInfo {
 
       return routePrefix.charAt(0) === '/' ? routePrefix : '/' + routePrefix;
     }
+  }
+
+  private guardMiddlewareFactory(methodInfo: IControllerMethod) {
+    return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+      if (!methodInfo.execGuards) return next();
+
+      let guardsResult = false;
+
+      methodInfo
+        .execGuards(req, res)
+        .then((execResult: boolean) => {
+          guardsResult = execResult;
+        })
+        .catch((execError) => {
+          this.logger.error(`Error was thrown in a Guard on the method ${methodInfo.name}`, execError);
+        })
+        .finally(() => {
+          if (guardsResult) {
+            next();
+          }
+          else if (!res.headersSent) {
+            this.logger.warn(`a Guard on the method ${methodInfo.name} is terminating the request without a proper Response handling, it will be handled as a 500 Error for now, but you should consider using res.status(xxx).json(...)!`);
+            res.status(500).end();
+          }
+        });
+    };
   }
 }
