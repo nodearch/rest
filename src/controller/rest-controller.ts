@@ -1,9 +1,8 @@
 import { ControllerInfo, IControllerMethod, ILogger } from '@nodearch/core';
 import * as metadata from '../metadata';
-import { getValidationMiddleware } from '../validation';
-import { getFileUploadMiddleware } from '../fileUpload';
 import express from 'express';
 import { IServerConfig } from '../interfaces';
+import { RestCtrlMethod } from './rest-ctrl-method';
 
 
 export class RestControllerInfo {
@@ -12,11 +11,13 @@ export class RestControllerInfo {
   private logger: ILogger;
   controllerInfo: ControllerInfo;
   router: express.Router;
+  methods: RestCtrlMethod[];
 
   constructor(controllerInfo: ControllerInfo, serverConfig: IServerConfig, logger: ILogger) {
     this.controllerInfo = controllerInfo;
     this.serverConfig = serverConfig;
     this.logger = logger;
+    this.methods = [];
     this.router = express.Router();
     this.registerRoutes();
   }
@@ -28,45 +29,14 @@ export class RestControllerInfo {
     const controllerMiddlewares = metadata.controller.getControllerMiddlewares(this.controllerInfo.classDef);
 
     this.controllerInfo.methods.forEach((methodInfo: IControllerMethod) => {
-      const middlewares = [];
+      const restCtrlMethod = new RestCtrlMethod(this.controllerInfo, methodInfo, controllerMiddlewares, this.serverConfig, this.logger, routePrefix);
 
-      const controllerMethodMiddlewares = metadata.controller.getControllerMethodMiddlewares(this.controllerInfo.classInstance, methodInfo.name);
-      const httpMethod = metadata.controller.getMethodHTTPMethod(this.controllerInfo.classInstance, methodInfo.name);
-      const httpPath = metadata.controller.getMethodHTTPPath(this.controllerInfo.classInstance, methodInfo.name);
-      const fullHttpPath = routePrefix ? routePrefix + httpPath : httpPath;
-
-      const fileUploadMiddleware = getFileUploadMiddleware(this.controllerInfo, methodInfo, this.serverConfig.fileUploadOptions);
-      const validationSchemaMiddleware = getValidationMiddleware(this.controllerInfo, methodInfo, this.serverConfig.joiValidationOptions);
-
-      // add Guards
-      if (methodInfo.execGuards) {
-        middlewares.push(this.guardMiddlewareFactory(methodInfo));
-      }
-
-      // add fileUpload
-      if (fileUploadMiddleware) {
-        middlewares.push(fileUploadMiddleware);
-      }
-
-      // Add Controller Middlewares then method Middlewares
-      middlewares.push(...controllerMiddlewares);
-      middlewares.push(...controllerMethodMiddlewares);
-
-      // Add Validation Middleware
-      if (validationSchemaMiddleware) {
-        middlewares.push(validationSchemaMiddleware);
-      }
-
-      // Add route handler
-      middlewares.push(
-        this.controllerInfo.classInstance[methodInfo.name]
-          .bind(this.controllerInfo.classInstance)
-      );
+      this.methods.push(restCtrlMethod);
 
       // register route
-      this.router[httpMethod](fullHttpPath, middlewares);
+      this.router[restCtrlMethod.httpMethod](restCtrlMethod.httpPath, restCtrlMethod.middlewares);
 
-      this.logger.info(`Register HTTP Route - ${httpMethod.toUpperCase()} ${fullHttpPath}`);
+      this.logger.info(`Register HTTP Route - ${restCtrlMethod.httpMethod.toUpperCase()} ${restCtrlMethod.httpPath}`);
     });
   }
 
@@ -83,31 +53,5 @@ export class RestControllerInfo {
 
       return routePrefix.charAt(0) === '/' ? routePrefix : '/' + routePrefix;
     }
-  }
-
-  private guardMiddlewareFactory(methodInfo: IControllerMethod) {
-    return (req: express.Request, res: express.Response, next: express.NextFunction) => {
-      if (!methodInfo.execGuards) return next();
-
-      let guardsResult = false;
-
-      methodInfo
-        .execGuards(req, res)
-        .then((execResult: boolean) => {
-          guardsResult = execResult;
-        })
-        .catch((execError) => {
-          this.logger.error(`Error was thrown in a Guard on the method ${methodInfo.name}`, execError);
-        })
-        .finally(() => {
-          if (guardsResult) {
-            next();
-          }
-          else if (!res.headersSent) {
-            this.logger.warn(`a Guard on the method ${methodInfo.name} is terminating the request without a proper Response handling, it will be handled as a 500 Error for now, but you should consider using res.status(xxx).json(...)!`);
-            res.status(500).end();
-          }
-        });
-    };
   }
 }
