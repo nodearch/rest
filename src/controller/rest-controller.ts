@@ -4,7 +4,6 @@ import express from 'express';
 import { IServerConfig } from '../interfaces';
 import { RestCtrlMethod } from './rest-ctrl-method';
 
-
 export class RestControllerInfo {
 
   private serverConfig: IServerConfig;

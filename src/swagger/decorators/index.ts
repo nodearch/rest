@@ -1,1 +1,1 @@
-export * from './responseSchemas';
+export * from './swagger';

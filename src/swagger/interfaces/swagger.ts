@@ -3,6 +3,7 @@ export interface ISwaggerOptions {
   servers?: ISwaggerAPIServer[];
   basePath?: string;
   schemes?: string[];
+  enable?: boolean;
 }
 
 export interface ISwaggerConfig {
@@ -29,6 +30,12 @@ export interface IHttpResponseSchema {
   description?: string;
   isArray?: boolean;
   schema?: JsonSchema;
+}
+
+export interface ISwagger {
+  enable?: boolean;
+  description?: string;
+  responses?: IHttpResponseSchema[];
 }
 
 export interface ISchemaProperties {

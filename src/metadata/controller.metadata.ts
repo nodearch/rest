@@ -3,7 +3,7 @@ import { getClassMetadata, setClassMetadata, getMethodMetadata, setMethodMetadat
 import { HttpMethod } from '../enums';
 import { IFileUpload } from '../fileUpload/file-upload.interface';
 import { IValidationSchema } from '../validation';
-import { IHttpResponseSchema } from '../swagger';
+import { ISwagger } from '../swagger';
 
 // ====> Controller Middlewares
 
@@ -57,11 +57,19 @@ export function setMethodValidationSchema(controllerDef: any, methodName: string
 
 // ====> API Responses Schema
 
-export function getMethodHttpResponses(controllerInstance: any, methodName: string): IHttpResponseSchema[] {
+export function getControllerSwagger(controllerInstance: any): ISwagger {
+  return getClassMetadata(METADATA_KEY.SWAGGER_HTTP_RESPONSES, controllerInstance);
+}
+
+export function setControllerSwagger(controllerDef: any, responsesSchema: ISwagger) {
+  setClassMetadata(METADATA_KEY.SWAGGER_HTTP_RESPONSES, controllerDef, responsesSchema);
+}
+
+export function getControllerMethodSwagger(controllerInstance: any, methodName: string): ISwagger {
   return getMethodMetadata(METADATA_KEY.SWAGGER_HTTP_RESPONSES, controllerInstance, methodName);
 }
 
-export function setMethodHttpResponses(controllerDef: any, methodName: string, responsesSchema: IHttpResponseSchema[]) {
+export function setControllerMethodSwagger(controllerDef: any, methodName: string, responsesSchema: ISwagger) {
   setMethodMetadata(METADATA_KEY.SWAGGER_HTTP_RESPONSES, controllerDef, methodName, responsesSchema);
 }
 

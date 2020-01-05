@@ -1,5 +1,4 @@
 import * as metadata from '../metadata';
-import { ControllerInfo } from '@nodearch/core';
 import Joi from '@hapi/joi';
 import path from 'path';
 import { fs } from '@nodearch/core';
@@ -8,8 +7,9 @@ import { IFileUpload } from '../fileUpload/file-upload.interface';
 import { IValidationSchema } from '../validation';
 import {
   ISwaggerAPIServer, ISwaggerAppInfo, ISwaggerOptions, IParsedUrl,
-  IHttpResponseSchema, JsonSchema, IPropertyRule
+  IHttpResponseSchema, JsonSchema, IPropertyRule, ISwagger
 } from './interfaces';
+import { RestControllerInfo } from '../controller';
 
 export class OpenApiSchema {
 
@@ -19,7 +19,7 @@ export class OpenApiSchema {
   public readonly components: any = { schemas: {} };
   public readonly paths: any = {};
 
-  constructor(controllers: ControllerInfo[], swaggerOptions?: ISwaggerOptions, joiOptions?: Joi.ValidationOptions) {
+  constructor(controllers: RestControllerInfo[], swaggerOptions?: ISwaggerOptions, joiOptions?: Joi.ValidationOptions) {
 
     if (swaggerOptions) {
       this.servers = swaggerOptions.servers || [];
@@ -31,28 +31,25 @@ export class OpenApiSchema {
     for (const controller of controllers) {
       for (const method of controller.methods) {
 
-        const schema: IValidationSchema = metadata.controller.getMethodValidationSchema(controller.classInstance, method.name);
-        const httpMethod = metadata.controller.getMethodHTTPMethod(controller.classInstance, method.name);
-        const httpPath = metadata.controller.getMethodHTTPPath(controller.classInstance, method.name);
-        const httpResponses: IHttpResponseSchema[] = metadata.controller.getMethodHttpResponses(controller.classInstance, method.name);
-        const filesUpload: IFileUpload[] = metadata.controller.getMethodFileUpload(controller.classInstance, method.name);
-        const fullHttpPath = path.join(`/${controller.prefix || ''}`, httpPath);
-        const urlWithParams = pathsUrlParams[fullHttpPath] || this.getUrlWithParams(fullHttpPath);
+        const schema: IValidationSchema = metadata.controller.getMethodValidationSchema(controller.controllerInfo.classInstance, method.name);
+        const swaggerConfig: ISwagger = metadata.controller.getControllerMethodSwagger(controller.controllerInfo.classInstance, method.name);
+        const filesUpload: IFileUpload[] = metadata.controller.getMethodFileUpload(controller.controllerInfo.classInstance, method.name);
+        const urlWithParams = pathsUrlParams[method.httpMethod] || this.getUrlWithParams(method.httpMethod);
         const action: any = {
-          tags: [ controller.prefix || 'base' ], parameters: [],
-          operationId: `${httpMethod}${controller.prefix ? `-${controller.prefix}` : ''}`
+          tags: [ controller.controllerInfo.prefix || 'base' ], parameters: [],
+          operationId: `${method.httpMethod}${controller.controllerInfo.prefix ? `-${controller.controllerInfo.prefix}` : ''}`
         };
         const presence = joiOptions && joiOptions.presence ? joiOptions.presence : 'required';
 
         this.setRequestParams(action, urlWithParams.pathParams, presence, schema) ;
         this.setRequestBody(action, presence, schema, filesUpload);
-        this.setResponses(action, httpResponses);
+        this.setResponses(action, swaggerConfig.responses);
 
         if (this.paths[urlWithParams.fullPath]) {
-          this.paths[urlWithParams.fullPath][httpMethod] = action;
+          this.paths[urlWithParams.fullPath][method.httpMethod] = action;
         }
         else {
-          this.paths[urlWithParams.fullPath] = { [httpMethod]: action };
+          this.paths[urlWithParams.fullPath] = { [method.httpMethod]: action };
         }
       }
     }
