@@ -5,25 +5,22 @@ import { OpenApiSchema } from './open-api-schema';
 import * as metadata from '../metadata';
 import { HttpMethod } from '../enums';
 import Joi from '@hapi/joi';
+import { ISwagger } from './interfaces';
 
 describe('swagger/open-api-schema', () => {
 
-  let getMethodHTTPMethod: SinonStub<any, any>, getMethodHTTPPath: SinonStub<any, any>, getMethodValidationSchema: SinonStub<any, any>,
-    getMethodHttpResponses: SinonStub<any, any>, getMethodFileUpload: SinonStub<any, any>;
+  let getMethodValidationSchema: SinonStub<any, any>, getControllerMethodSwagger: SinonStub<any, any>,
+    getMethodFileUpload: SinonStub<any, any>;
 
   beforeEach(() => {
-    getMethodHTTPMethod = stub(metadata.controller, 'getMethodHTTPMethod').returns(HttpMethod.GET);
-    getMethodHTTPPath = stub(metadata.controller, 'getMethodHTTPPath').returns('/');
     getMethodValidationSchema = stub(metadata.controller, 'getMethodValidationSchema').returns({});
-    getMethodHttpResponses = stub(metadata.controller, 'getMethodHttpResponses').returns([]);
+    getControllerMethodSwagger = stub(metadata.controller, 'getControllerMethodSwagger').returns({});
     getMethodFileUpload = stub(metadata.controller, 'getMethodFileUpload').returns([]);
   });
 
   afterEach(() => {
-    getMethodHTTPMethod.restore();
-    getMethodHTTPPath.restore();
     getMethodValidationSchema.restore();
-    getMethodHttpResponses.restore();
+    getControllerMethodSwagger.restore();
     getMethodFileUpload.restore();
   });
 
@@ -32,7 +29,10 @@ describe('swagger/open-api-schema', () => {
     describe('One Controller One End Point', () => {
       it('no joi or swagger options or no response schema', () => {
 
-        const controllers: any[] = [{ classInstance: {}, prefix: 'controller1', methods: [{ name: 'find' }] }];
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: 'controller1', methods: [{ name: 'find' }] },
+          methods: [{ httpPath: '/controller1', httpMethod: HttpMethod.GET, name: 'find' }]
+        }];
 
         const openApiSchema = new OpenApiSchema(controllers, { info: {} });
         expect(openApiSchema).to.deep.equals({
@@ -47,9 +47,11 @@ describe('swagger/open-api-schema', () => {
 
       it('with joi but swagger options or no response schema', () => {
 
-        const controllers: any[] = [{ classInstance: {}, methods: [{ name: 'create' }] }];
-        getMethodHTTPMethod.returns(HttpMethod.POST);
-        getMethodHTTPPath.returns('/test/:id/test/:name');
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: '', methods: [{ name: 'create' }] },
+          methods: [{ httpPath: '/test/:id/test/:name', httpMethod: HttpMethod.POST, name: 'create' }]
+        }];
+
         getMethodValidationSchema.returns({
           body: Joi.object().keys({ name: Joi.string().required(), age: Joi.number().optional() }),
           params: Joi.object().keys({ name: Joi.string().pattern(/^./).optional() })
@@ -78,9 +80,11 @@ describe('swagger/open-api-schema', () => {
 
       it('with joi & swagger options but no response schema', () => {
 
-        const controllers: any[] = [{ classInstance: {}, prefix: 'controller2', methods: [{ name: 'update' }] }];
-        getMethodHTTPMethod.returns(HttpMethod.PUT);
-        getMethodHTTPPath.returns('/test/:id/test');
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: 'controller2', methods: [{ name: 'update' }] },
+          methods: [{ httpPath: '/controller2/test/:id/test', httpMethod: HttpMethod.PUT, name: 'update' }]
+        }];
+
         getMethodValidationSchema.returns({
           body: Joi.object().keys({
             id: Joi.string().guid().max(7).required().example(2),
@@ -127,17 +131,20 @@ describe('swagger/open-api-schema', () => {
 
       it('with joi & swagger options & response schema & file upload', () => {
 
-        const controllers: any[] = [{ classInstance: {}, prefix: 'controller2', methods: [{ name: 'update' }] }];
-        const responsesSchema = [{
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: 'controller2', methods: [{ name: 'update' }] },
+          methods: [{ httpPath: '/controller2/test/:id/test', httpMethod: HttpMethod.PUT, name: 'update' }]
+        }];
+
+        const swaggerConfig: ISwagger = {responses: [{
             status: 200, schema: {
               type: 'object', required: true,
               properties: { id: { type: 'integer', format: 'int64' }, name: { type: 'string' }, tag: { type: 'string' } }
             }, description: 'Test description'
           }, { status: 400, description: 'Test Error description2' }, { status: 500 }
-        ];
-        getMethodHTTPMethod.returns(HttpMethod.PUT);
-        getMethodHTTPPath.returns('/test/:id/test');
-        getMethodHttpResponses.returns(responsesSchema);
+        ]};
+
+        getControllerMethodSwagger.returns(swaggerConfig);
         getMethodFileUpload.returns([{ name: 'file1' }, { name: 'file2', maxCount: 3 }]);
         getMethodValidationSchema.returns({
           body: Joi.object().keys({
@@ -222,15 +229,19 @@ describe('swagger/open-api-schema', () => {
 
       it('text request & text response', () => {
 
-        const controllers: any[] = [{ classInstance: {}, prefix: 'controller1', methods: [{ name: 'find' }] }];
-        const responsesSchema = [{
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: 'controller1', methods: [{ name: 'find' }] },
+          methods: [{ httpPath: '/controller1/test/:id/test/:name', httpMethod: HttpMethod.GET, name: 'find' }]
+        }];
+
+        const swaggerConfig: ISwagger = { responses: [{
             status: 200, isArray: true, schema: {
               type: 'string', required: true,
             }, description: 'Test description'
           }, { status: 400, description: 'Test Error description2' }
-        ];
-        getMethodHTTPPath.returns('/test/:id/test/:name');
-        getMethodHttpResponses.returns(responsesSchema);
+        ]};
+
+        getControllerMethodSwagger.returns(swaggerConfig);
         getMethodValidationSchema.returns({
           body: Joi.number().required().default(1),
           params: Joi.object().keys({ name: Joi.string().pattern(/^./).optional() }),

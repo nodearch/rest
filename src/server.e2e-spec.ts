@@ -9,10 +9,9 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import express = require('express');
-import { ResponseSchemas } from './swagger';
+import { Swagger } from './swagger';
 import { Upload } from './fileUpload';
 import { expect } from 'chai';
-
 
 const fakeLogger = { error: () => { }, warn: () => { }, info: () => { }, debug: () => { } };
 
@@ -153,13 +152,13 @@ describe('[e2e]server', () => {
       }
 
       @Middleware([middleware5])
-      @ResponseSchemas([{
+      @Swagger({ responses: [{
         status: 200, schema: {
           type: 'object', required: true,
           properties: { id: { type: 'integer', format: 'int64' }, name: { type: 'string' }, tag: { type: 'string' } }
         }, description: 'Test description'
       }, { status: 400, description: 'Test Error description2' }, { status: 500 }
-      ])
+      ]})
       @Validate({
         body: Joi.object().keys({
           i: Joi.number().min(6).max(100).required(),

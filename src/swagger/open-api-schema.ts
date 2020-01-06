@@ -34,7 +34,8 @@ export class OpenApiSchema {
         const schema: IValidationSchema = metadata.controller.getMethodValidationSchema(controller.controllerInfo.classInstance, method.name);
         const swaggerConfig: ISwagger = metadata.controller.getControllerMethodSwagger(controller.controllerInfo.classInstance, method.name);
         const filesUpload: IFileUpload[] = metadata.controller.getMethodFileUpload(controller.controllerInfo.classInstance, method.name);
-        const urlWithParams = pathsUrlParams[method.httpMethod] || this.getUrlWithParams(method.httpMethod);
+        pathsUrlParams[method.httpPath] = pathsUrlParams[method.httpPath] || this.getUrlWithParams(method.httpPath);
+        const urlWithParams = pathsUrlParams[method.httpPath];
         const action: any = {
           tags: [ controller.controllerInfo.prefix || 'base' ], parameters: [],
           operationId: `${method.httpMethod}${controller.controllerInfo.prefix ? `-${controller.controllerInfo.prefix}` : ''}`
