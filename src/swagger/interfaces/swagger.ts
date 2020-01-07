@@ -105,3 +105,43 @@ export interface IParsedUrl {
   fullPath: string;
   pathParams: string[];
 }
+
+export interface IPathsUrlParams {
+  [key: string]: IParsedUrl;
+}
+
+export interface IAction {
+  tags: string[];
+  parameters: IParameter[];
+  operationId: string;
+  requestBody?: { required?: boolean, content: { [key: string]: { schema: { $ref: string } | JsonSchema } } };
+  responses?: {
+    [key: number]: {
+      description?: string,
+      content?: { [key: string]: { schema: { $ref: string } | { type: string, items: { $ref: string } } } }
+    }
+  };
+}
+
+export interface IParameter {
+  name: string;
+  in: string;
+  type: string;
+  required: boolean;
+}
+
+export interface IParametersList {
+  [key: string]: IParameter;
+}
+
+export interface IPaths {
+  [key: string]: {
+    [key: string]: IAction
+  };
+}
+
+export interface IComponents {
+  schemas: {
+    [key: string]: JsonSchema
+  };
+}

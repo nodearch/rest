@@ -6,27 +6,33 @@ import { ObjectType, ArrayType, NumberType, BoolType, StringType } from './types
 import { IFileUpload } from '../fileUpload/file-upload.interface';
 import { IValidationSchema } from '../validation';
 import {
-  ISwaggerAPIServer, ISwaggerAppInfo, ISwaggerOptions, IParsedUrl,
-  IHttpResponseSchema, JsonSchema, IPropertyRule, ISwagger
+  ISwaggerAPIServer, ISwaggerAppInfo, ISwaggerOptions, IParsedUrl, IHttpResponseSchema, IPaths,
+  JsonSchema, IPropertyRule, ISwagger, IPathsUrlParams, IAction, IParameter, IParametersList, IComponents
 } from './interfaces';
 import { RestControllerInfo } from '../controller';
 
 export class OpenApiSchema {
-
-  public readonly openapi: string = '3.0.0';
-  public readonly servers: ISwaggerAPIServer[] = [];
-  public readonly info: ISwaggerAppInfo = {};
-  public readonly components: any = { schemas: {} };
-  public readonly paths: any = {};
+  public readonly openapi: string;
+  public readonly servers: ISwaggerAPIServer[];
+  public readonly info: ISwaggerAppInfo;
+  public readonly components: IComponents;
+  public readonly paths: IPaths;
 
   constructor(controllers: RestControllerInfo[], swaggerOptions?: ISwaggerOptions, joiOptions?: Joi.ValidationOptions) {
+    this.openapi = '3.0.0';
+    this.paths = {};
+    this.components = { schemas: {} };
 
     if (swaggerOptions) {
       this.servers = swaggerOptions.servers || [];
       this.info = swaggerOptions.info || {};
     }
+    else {
+      this.servers = [];
+      this.info = {};
+    }
 
-    const pathsUrlParams: { [key: string]: IParsedUrl } = {};
+    const pathsUrlParams: IPathsUrlParams = {};
 
     for (const controller of controllers) {
       for (const method of controller.methods) {
@@ -35,12 +41,13 @@ export class OpenApiSchema {
         const swaggerConfig: ISwagger = metadata.controller.getControllerMethodSwagger(controller.controllerInfo.classInstance, method.name);
         const filesUpload: IFileUpload[] = metadata.controller.getMethodFileUpload(controller.controllerInfo.classInstance, method.name);
         pathsUrlParams[method.httpPath] = pathsUrlParams[method.httpPath] || this.getUrlWithParams(method.httpPath);
-        const urlWithParams = pathsUrlParams[method.httpPath];
-        const action: any = {
+        const urlWithParams: IParsedUrl = pathsUrlParams[method.httpPath];
+        const presence: Joi.PresenceMode = joiOptions && joiOptions.presence ? joiOptions.presence : 'required';
+
+        const action: IAction = {
           tags: [ controller.controllerInfo.prefix || 'base' ], parameters: [],
           operationId: `${method.httpMethod}${controller.controllerInfo.prefix ? `-${controller.controllerInfo.prefix}` : ''}`
         };
-        const presence = joiOptions && joiOptions.presence ? joiOptions.presence : 'required';
 
         this.setRequestParams(action, urlWithParams.pathParams, presence, schema) ;
         this.setRequestBody(action, presence, schema, filesUpload);
@@ -56,13 +63,12 @@ export class OpenApiSchema {
     }
   }
 
-  private setRequestParams(action: any, urlParams: string[], presence: string, schema?: IValidationSchema) {
-
-    const urlParamsRules: { [key: string]: object } = {};
+  private setRequestParams(action: IAction, urlParams: string[], presence: string, schema?: IValidationSchema): void {
+    const urlParamsRules: IParametersList = {};
 
     if (schema) {
       if (schema.headers) {
-        const headersSchema = OpenApiSchema.parseTypes(schema.headers.describe(), presence);
+        const headersSchema: JsonSchema = OpenApiSchema.parseTypes(schema.headers.describe(), presence);
 
         for (const header in headersSchema.properties) {
           action.parameters.push(Object.assign({ name: header, in: 'header' }, headersSchema.properties[header]));
@@ -70,7 +76,7 @@ export class OpenApiSchema {
       }
 
       if (schema.query) {
-        const querySchema = OpenApiSchema.parseTypes(schema.query.describe(), presence);
+        const querySchema: JsonSchema = OpenApiSchema.parseTypes(schema.query.describe(), presence);
 
         for (const query in querySchema.properties) {
           action.parameters.push(Object.assign({ name: query, in: 'query' }, querySchema.properties[query]));
@@ -78,7 +84,7 @@ export class OpenApiSchema {
       }
 
       if (schema.params) {
-        const paramsSchema = OpenApiSchema.parseTypes(schema.params.describe(), presence);
+        const paramsSchema: JsonSchema = OpenApiSchema.parseTypes(schema.params.describe(), presence);
 
         for (const param in paramsSchema.properties) {
           urlParamsRules[param] = paramsSchema.properties[param];
@@ -88,19 +94,16 @@ export class OpenApiSchema {
 
     if (urlParams) {
       for (const param of urlParams) {
-        const paramConfig = Object.assign(urlParamsRules[param] || {}, { name: param, in: 'path', type: 'string', required: true });
+        const paramConfig: IParameter = Object.assign(urlParamsRules[param] || {}, { name: param, in: 'path', type: 'string', required: true });
         action.parameters = [paramConfig].concat(action.parameters);
       }
     }
   }
 
-  private setRequestBody(action: any, presence: string, schema?: IValidationSchema, files?: IFileUpload[]) {
+  private setRequestBody(action: IAction, presence: string, schema?: IValidationSchema, files?: IFileUpload[]): void {
 
     if (files && files.length > 0) {
-
-      const schemaBody: JsonSchema = schema && schema.body ?
-        OpenApiSchema.parseTypes(schema.body.describe(), presence) :
-        { type: 'object', properties: {} };
+      const schemaBody = schema && schema.body ? OpenApiSchema.parseTypes(schema.body.describe(), presence) : { type: 'object', properties: {} };
 
       schemaBody.properties = schemaBody.properties || {};
 
@@ -116,18 +119,19 @@ export class OpenApiSchema {
       action.requestBody = { content: { 'multipart/form-data': { schema: schemaBody } } };
     }
     else if (schema && schema.body) {
-
-      const definitionKey = `${action.operationId}-body`;
-      const bodySchema = OpenApiSchema.parseTypes(schema.body.describe(), presence);
+      const definitionKey: string = `${action.operationId}-body`;
+      const bodySchema: JsonSchema = OpenApiSchema.parseTypes(schema.body.describe(), presence);
       this.components.schemas[definitionKey] = bodySchema;
-      const { required } = bodySchema;
       const contentType = bodySchema.type && !['array', 'object'].includes(bodySchema.type) ? 'text/plain' : 'application/json';
 
-      action.requestBody = { required, content: { [contentType]: { schema: { $ref: `#/components/schemas/${definitionKey}` } } } };
+      action.requestBody = {
+        required: bodySchema.required,
+        content: { [contentType]: { schema: { $ref: `#/components/schemas/${definitionKey}` } } }
+      };
     }
   }
 
-  private setResponses(action: any, httpResponses?: IHttpResponseSchema[]) {
+  private setResponses(action: IAction, httpResponses?: IHttpResponseSchema[]): void {
     action.responses = {};
 
     if (httpResponses && httpResponses.length > 0) {
@@ -150,11 +154,9 @@ export class OpenApiSchema {
     else {
       action.responses[200] = { description: '' };
     }
-
   }
 
   private getUrlWithParams(url: string): IParsedUrl {
-
     const pathParams: string[] = [];
     let fullPath: string = '';
 
@@ -172,6 +174,7 @@ export class OpenApiSchema {
         }
       }
     }
+
     return { fullPath, pathParams };
   }
 
@@ -250,5 +253,4 @@ export class OpenApiSchema {
   public async writeOpenAPI(dir: string): Promise<void> {
     await fs.writeFile(path.join(dir, 'swagger.json'), JSON.stringify(this));
   }
-
 }
