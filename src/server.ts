@@ -4,12 +4,14 @@ import * as http from 'http';
 import { Sequence, ExpressSequence, StartExpress, ExpressMiddleware, RegisterRoutes } from './sequence';
 import { IServerConfig } from './interfaces';
 import { RestControllerInfo } from './controller';
+import { HttpErrorsRegistry } from './errors/errors-registry';
 
 export class RestServer implements IAppExtension {
 
   private server: http.Server;
   private logger: ILogger;
   private expressSequence: ExpressSequence[];
+  private httpErrorsRegistry: HttpErrorsRegistry;
   controllers: RestControllerInfo[];
   config: IServerConfig;
   expressApp: express.Application;
@@ -20,6 +22,7 @@ export class RestServer implements IAppExtension {
     this.config = options.config;
     this.logger = options.logger ? options.logger : new Logger();
     this.expressSequence = options.sequence.expressSequence;
+    this.httpErrorsRegistry = new HttpErrorsRegistry(this.config.httpErrorsOptions);
 
     this.expressApp = express();
     this.server = http.createServer(this.expressApp);
@@ -37,7 +40,7 @@ export class RestServer implements IAppExtension {
     this.registerSequenceMiddlewares(this.expressSequence.slice(0, eRegisterRoutesIndex));
 
     controllers.forEach(ctrl => {
-      const restCtrl = new RestControllerInfo(ctrl, this.config, this.logger);
+      const restCtrl = new RestControllerInfo(ctrl, this.httpErrorsRegistry, this.config, this.logger);
       this.expressApp.use(restCtrl.router);
       this.controllers.push(restCtrl);
     });

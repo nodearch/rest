@@ -3,18 +3,21 @@ import * as metadata from '../metadata';
 import express from 'express';
 import { IServerConfig } from '../interfaces';
 import { RestCtrlMethod } from './rest-ctrl-method';
+import { HttpErrorsRegistry } from '../errors/errors-registry';
 
 
 export class RestControllerInfo {
 
+  private httpErrorsRegistry: HttpErrorsRegistry;
   private serverConfig: IServerConfig;
   private logger: ILogger;
   controllerInfo: ControllerInfo;
   router: express.Router;
   methods: RestCtrlMethod[];
 
-  constructor(controllerInfo: ControllerInfo, serverConfig: IServerConfig, logger: ILogger) {
+  constructor(controllerInfo: ControllerInfo, httpErrorsRegistry: HttpErrorsRegistry, serverConfig: IServerConfig, logger: ILogger) {
     this.controllerInfo = controllerInfo;
+    this.httpErrorsRegistry = httpErrorsRegistry;
     this.serverConfig = serverConfig;
     this.logger = logger;
     this.methods = [];
@@ -29,7 +32,7 @@ export class RestControllerInfo {
     const controllerMiddlewares = metadata.controller.getControllerMiddlewares(this.controllerInfo.classDef);
 
     this.controllerInfo.methods.forEach((methodInfo: IControllerMethod) => {
-      const restCtrlMethod = new RestCtrlMethod(this.controllerInfo, methodInfo, controllerMiddlewares, this.serverConfig, this.logger, routePrefix);
+      const restCtrlMethod = new RestCtrlMethod(this.controllerInfo, methodInfo, controllerMiddlewares, this.httpErrorsRegistry, this.serverConfig, this.logger, routePrefix);
 
       this.methods.push(restCtrlMethod);
 

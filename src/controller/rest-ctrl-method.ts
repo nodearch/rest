@@ -5,6 +5,7 @@ import { getFileUploadMiddleware } from '../fileUpload';
 import express from 'express';
 import { IServerConfig } from '../interfaces';
 import { HttpMethod } from '../enums';
+import { HttpErrorsRegistry } from '../errors/errors-registry';
 
 
 export class RestCtrlMethod {
@@ -15,19 +16,30 @@ export class RestCtrlMethod {
   private ctrlMiddlewares: express.RequestHandler[];
   private serverConfig: IServerConfig;
   private routePrefix?: string;
+  private httpErrorsRegistry: HttpErrorsRegistry;
+
 
   public name: string;
   public middlewares: express.RequestHandler[];
   public httpPath: string;
   public httpMethod: HttpMethod;
 
-  constructor (controllerInfo: ControllerInfo, methodInfo: IControllerMethod, ctrlMiddlewares: express.RequestHandler[], serverConfig: IServerConfig, logger: ILogger, routePrefix?: string) {
+  constructor(
+    controllerInfo: ControllerInfo,
+    methodInfo: IControllerMethod,
+    ctrlMiddlewares: express.RequestHandler[],
+    httpErrorsRegistry: HttpErrorsRegistry,
+    serverConfig: IServerConfig,
+    logger: ILogger,
+    routePrefix?: string
+  ) {
     this.name = methodInfo.name;
     this.logger = logger;
     this.controllerInfo = controllerInfo;
     this.methodInfo = methodInfo;
     this.middlewares = [];
     this.ctrlMiddlewares = ctrlMiddlewares;
+    this.httpErrorsRegistry = httpErrorsRegistry;
     this.serverConfig = serverConfig;
     this.routePrefix = routePrefix;
 
@@ -64,8 +76,10 @@ export class RestCtrlMethod {
 
     // Add route handler
     this.middlewares.push(
-      this.controllerInfo.classInstance[this.methodInfo.name]
-        .bind(this.controllerInfo.classInstance)
+      this.errorWrapFactory(
+        this.controllerInfo.classInstance[this.methodInfo.name]
+          .bind(this.controllerInfo.classInstance)
+      )
     );
   }
 
@@ -92,6 +106,17 @@ export class RestCtrlMethod {
             res.status(500).end();
           }
         });
+    };
+  }
+
+  private errorWrapFactory(controllerMethod: any) {
+    return async (req: express.Request, res: express.Response) => {
+      try {
+        await controllerMethod(req, res);
+      }
+      catch (e) {
+        this.httpErrorsRegistry.handleError(e, res);
+      }
     };
   }
 }
