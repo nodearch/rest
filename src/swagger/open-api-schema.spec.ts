@@ -39,7 +39,7 @@ describe('swagger/open-api-schema', () => {
           openapi: '3.0.0', servers: [], info: {}, components: { schemas: {} },
           paths: {
             '/controller1': {
-              get: { tags: ['controller1'], operationId: 'get-controller1', parameters: [], responses: { 200: { description: '' } } }
+              get: { tags: ['controller1'], security: [], operationId: 'get-controller1', parameters: [], responses: { 200: { description: '' } } }
             }
           }
         });
@@ -260,6 +260,7 @@ describe('swagger/open-api-schema', () => {
           '/controller1/test/{id}/test/{name}': {
             get: {
               tags: ['controller1'],
+              security: [],
               operationId: 'get-controller1',
               parameters: [
                 { type: 'string', required: true, pattern: '/^./', name: 'name', in: 'path' },

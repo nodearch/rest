@@ -8,7 +8,6 @@ import { HttpMethod } from './enums';
 import express from 'express';
 import Joi from '@hapi/joi';
 
-
 export {
   RestServer,
   HttpMethod,

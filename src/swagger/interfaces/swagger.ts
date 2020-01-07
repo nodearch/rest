@@ -1,9 +1,22 @@
+import { ApiKeyIn } from '../enums';
+
 export interface ISwaggerOptions {
   info?: ISwaggerAppInfo;
   servers?: ISwaggerAPIServer[];
   basePath?: string;
   schemes?: string[];
-  enable?: boolean;
+  enableForAll?: boolean;
+  security?: ISwaggerSecurityOptions;
+}
+
+export interface ISwaggerSecurityOptions {
+  applyForAll?: boolean;
+  definitions?: ISwaggerSecurityConfig;
+}
+
+export interface ISwaggerSecurityConfig {
+  basicAuth?: boolean;
+  apiKeysAuth?: [{ key: string, in?: ApiKeyIn }];
 }
 
 export interface ISwaggerConfig {
@@ -25,6 +38,14 @@ export interface ISwaggerAPIServer {
   description?: string;
 }
 
+export interface ISwaggerSecurityDefinitions {
+  [key: string]: {
+    type: string,
+    name?: string,
+    in?: string
+  };
+}
+
 export interface IHttpResponseSchema {
   status: number;
   description?: string;
@@ -33,9 +54,16 @@ export interface IHttpResponseSchema {
 }
 
 export interface ISwagger {
+  applyForAll?: boolean;
   enable?: boolean;
   description?: string;
   responses?: IHttpResponseSchema[];
+  securityDefinitions?: ISwaggerSecurityKeys;
+}
+
+export interface ISwaggerSecurityKeys {
+  basicAuth?: boolean;
+  apiKeysAuth?: string[];
 }
 
 export interface ISchemaProperties {
@@ -121,7 +149,10 @@ export interface IAction {
       content?: { [key: string]: { schema: { $ref: string } | { type: string, items: { $ref: string } } } }
     }
   };
+  security: IActionSecurity[];
 }
+
+export interface IActionSecurity { [key: string]: []; }
 
 export interface IParameter {
   name: string;

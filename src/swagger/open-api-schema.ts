@@ -7,7 +7,8 @@ import { IFileUpload } from '../fileUpload';
 import { IValidationSchema } from '../validation';
 import {
   ISwaggerAPIServer, ISwaggerAppInfo, ISwaggerOptions, IParsedUrl, IHttpResponseSchema, IPaths,
-  JsonSchema, IPropertyRule, ISwagger, IPathsUrlParams, IAction, IParameter, IParametersList, IComponents
+  JsonSchema, IPropertyRule, ISwagger, IPathsUrlParams, IAction, IParameter, IParametersList, IComponents,
+  ISwaggerSecurityDefinitions, ISwaggerSecurityConfig, IActionSecurity, ISwaggerSecurityKeys, ISwaggerSecurityOptions
 } from './interfaces';
 import { RestControllerInfo } from '../controller';
 
@@ -17,6 +18,7 @@ export class OpenApiSchema {
   public readonly info: ISwaggerAppInfo;
   public readonly components: IComponents;
   public readonly paths: IPaths;
+  public readonly securityDefinitions?: ISwaggerSecurityDefinitions;
 
   constructor(controllers: RestControllerInfo[], swaggerOptions?: ISwaggerOptions, joiOptions?: Joi.ValidationOptions) {
     this.openapi = '3.0.0';
@@ -26,41 +28,64 @@ export class OpenApiSchema {
     if (swaggerOptions) {
       this.servers = swaggerOptions.servers || [];
       this.info = swaggerOptions.info || {};
+
+      if (swaggerOptions.security && swaggerOptions.security.definitions) {
+        this.securityDefinitions = this.getSecurityDefinitions(swaggerOptions.security.definitions);
+      }
     }
     else {
       this.servers = [];
       this.info = {};
     }
 
+    this.init(controllers, swaggerOptions || {}, joiOptions);
+  }
+
+  private init(controllers: RestControllerInfo[], swaggerOptions: ISwaggerOptions, joiOptions?: Joi.ValidationOptions) {
+
     const pathsUrlParams: IPathsUrlParams = {};
 
     for (const controller of controllers) {
       for (const method of controller.methods) {
 
-        const schema: IValidationSchema = metadata.controller.getMethodValidationSchema(controller.controllerInfo.classInstance, method.name);
-        const swaggerConfig: ISwagger = metadata.controller.getControllerMethodSwagger(controller.controllerInfo.classInstance, method.name);
-        const filesUpload: IFileUpload[] = metadata.controller.getMethodFileUpload(controller.controllerInfo.classInstance, method.name);
-        pathsUrlParams[method.httpPath] = pathsUrlParams[method.httpPath] || this.getUrlWithParams(method.httpPath);
-        const urlWithParams: IParsedUrl = pathsUrlParams[method.httpPath];
-        const presence: Joi.PresenceMode = joiOptions && joiOptions.presence ? joiOptions.presence : 'required';
+        const swaggerMethodConfig: ISwagger = metadata.controller.getControllerMethodSwagger(controller.controllerInfo.classInstance, method.name);
+        const swaggerCtrlConfig: ISwagger = metadata.controller.getControllerSwagger(controller.controllerInfo.classInstance);
 
-        const action: IAction = {
-          tags: [ controller.controllerInfo.prefix || 'base' ], parameters: [],
-          operationId: `${method.httpMethod}${controller.controllerInfo.prefix ? `-${controller.controllerInfo.prefix}` : ''}`
-        };
+        if (this.isAllowed(swaggerMethodConfig, swaggerCtrlConfig, swaggerOptions)) {
+          const schema: IValidationSchema = metadata.controller.getMethodValidationSchema(controller.controllerInfo.classInstance, method.name);
+          const filesUpload: IFileUpload[] = metadata.controller.getMethodFileUpload(controller.controllerInfo.classInstance, method.name);
+          pathsUrlParams[method.httpPath] = pathsUrlParams[method.httpPath] || this.getUrlWithParams(method.httpPath);
+          const urlWithParams: IParsedUrl = pathsUrlParams[method.httpPath];
+          const presence: Joi.PresenceMode = joiOptions && joiOptions.presence ? joiOptions.presence : 'required';
 
-        this.setRequestParams(action, urlWithParams.pathParams, presence, schema) ;
-        this.setRequestBody(action, presence, schema, filesUpload);
-        this.setResponses(action, swaggerConfig.responses);
+          const action: IAction = {
+            tags: [ controller.controllerInfo.prefix || 'base' ], parameters: [], security: [],
+            operationId: `${method.httpMethod}${controller.controllerInfo.prefix ? `-${controller.controllerInfo.prefix}` : ''}`
+          };
 
-        if (this.paths[urlWithParams.fullPath]) {
-          this.paths[urlWithParams.fullPath][method.httpMethod] = action;
-        }
-        else {
-          this.paths[urlWithParams.fullPath] = { [method.httpMethod]: action };
+          this.setRequestParams(action, urlWithParams.pathParams, presence, schema) ;
+          this.setRequestBody(action, presence, schema, filesUpload);
+          this.setResponses(action, swaggerMethodConfig.responses);
+          this.setSecurity(action, swaggerMethodConfig, swaggerCtrlConfig, swaggerOptions.security);
+
+          if (this.paths[urlWithParams.fullPath]) {
+            this.paths[urlWithParams.fullPath][method.httpMethod] = action;
+          }
+          else {
+            this.paths[urlWithParams.fullPath] = { [method.httpMethod]: action };
+          }
         }
       }
     }
+  }
+
+  private isAllowed(methodConfig: ISwagger, ctrlConfig: ISwagger, swaggerOptions?: ISwaggerOptions): boolean {
+
+    let availableForSwagger = swaggerOptions && swaggerOptions.hasOwnProperty('enableForAll') ? <boolean> swaggerOptions.enableForAll : true;
+    availableForSwagger = ctrlConfig && ctrlConfig.hasOwnProperty('enable') ? <boolean> ctrlConfig.enable : availableForSwagger;
+    availableForSwagger = methodConfig && methodConfig.hasOwnProperty('enable') ? <boolean> methodConfig.enable : availableForSwagger;
+
+    return availableForSwagger;
   }
 
   private setRequestParams(action: IAction, urlParams: string[], presence: string, schema?: IValidationSchema): void {
@@ -104,7 +129,6 @@ export class OpenApiSchema {
 
     if (files && files.length > 0) {
       const schemaBody = schema && schema.body ? OpenApiSchema.parseTypes(schema.body.describe(), presence) : { type: 'object', properties: {} };
-
       schemaBody.properties = schemaBody.properties || {};
 
       for (const file of files) {
@@ -156,6 +180,35 @@ export class OpenApiSchema {
     }
   }
 
+  private setSecurity(action: IAction, methodConfig: ISwagger, ctrlConfig: ISwagger, securityOptions?: ISwaggerSecurityOptions): void {
+
+    if (methodConfig && methodConfig.securityDefinitions) {
+      this.setValidSecurityKeys(action, methodConfig.securityDefinitions);
+    }
+    else if (ctrlConfig && ctrlConfig.applyForAll && ctrlConfig.securityDefinitions) {
+      this.setValidSecurityKeys(action, ctrlConfig.securityDefinitions);
+    }
+    else if (securityOptions && securityOptions.applyForAll && this.securityDefinitions) {
+      action.security.concat(Object.keys(this.securityDefinitions).map(secDef => ({ [secDef]: [] })));
+    }
+  }
+
+  private setValidSecurityKeys(action: IAction, selectedSecurityKeys: ISwaggerSecurityKeys): void {
+
+    if (this.securityDefinitions) {
+      if (selectedSecurityKeys.basicAuth && this.securityDefinitions.basicAuth) {
+        action.security.push({ basicAuth: [] });
+      }
+      else if (selectedSecurityKeys.apiKeysAuth) {
+        for (const authKey of selectedSecurityKeys.apiKeysAuth) {
+          if (this.securityDefinitions[authKey]) {
+            action.security.push({ basicAuth: [] });
+          }
+        }
+      }
+    }
+  }
+
   private getUrlWithParams(url: string): IParsedUrl {
     const pathParams: string[] = [];
     let fullPath: string = '';
@@ -178,10 +231,29 @@ export class OpenApiSchema {
     return { fullPath, pathParams };
   }
 
+  private getSecurityDefinitions(securityConfig: ISwaggerSecurityConfig): ISwaggerSecurityDefinitions {
+    const securityDefinitions: ISwaggerSecurityDefinitions = {};
+
+    if (securityConfig.basicAuth) {
+      securityDefinitions.basicAuth = { type: 'basic' };
+    }
+
+    if (securityConfig.apiKeysAuth && securityConfig.apiKeysAuth.length) {
+      for (const authKey of securityConfig.apiKeysAuth) {
+        securityDefinitions[authKey.key] = {
+          name: authKey.key,
+          type: 'apiKey',
+          in: authKey.in || 'header'
+        };
+      }
+    }
+
+    return securityDefinitions;
+  }
+
   public static parseTypes(propertySchema: Joi.Description, presence: string): JsonSchema {
 
     switch (propertySchema.type) {
-
       case 'object':
         return new ObjectType(presence, propertySchema.keys, this.getSchemaRules(propertySchema, presence));
 
@@ -205,7 +277,6 @@ export class OpenApiSchema {
   }
 
   public static getSchemaRules(schema: any, presence: string): IPropertyRule[] {
-
     const rules: IPropertyRule[] = [];
 
     if (schema.flags) {
