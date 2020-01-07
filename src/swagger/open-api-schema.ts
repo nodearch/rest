@@ -3,7 +3,7 @@ import Joi from '@hapi/joi';
 import path from 'path';
 import { fs } from '@nodearch/core';
 import { ObjectType, ArrayType, NumberType, BoolType, StringType } from './types';
-import { IFileUpload } from '../fileUpload/file-upload.interface';
+import { IFileUpload } from '../fileUpload';
 import { IValidationSchema } from '../validation';
 import {
   ISwaggerAPIServer, ISwaggerAppInfo, ISwaggerOptions, IParsedUrl, IHttpResponseSchema, IPaths,
