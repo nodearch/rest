@@ -8,7 +8,7 @@ import { IValidationSchema } from '../validation';
 import {
   ISwaggerAPIServer, ISwaggerAppInfo, ISwaggerOptions, IParsedUrl, IHttpResponseSchema, IPaths,
   JsonSchema, IPropertyRule, ISwagger, IPathsUrlParams, IAction, IParameter, IParametersList, IComponents,
-  ISwaggerSecurityDefinitions, ISwaggerSecurityConfig, IActionSecurity, ISwaggerSecurityKeys, ISwaggerSecurityOptions
+  ISwaggerSecurityDefinitions, ISwaggerSecurityConfig, ISwaggerSecurityKeys, ISwaggerSecurityOptions, ISwaggerTag
 } from './interfaces';
 import { RestControllerInfo } from '../controller';
 
@@ -19,10 +19,12 @@ export class OpenApiSchema {
   public readonly components: IComponents;
   public readonly paths: IPaths;
   public readonly securityDefinitions?: ISwaggerSecurityDefinitions;
+  public readonly tags: ISwaggerTag[];
 
   constructor(controllers: RestControllerInfo[], swaggerOptions?: ISwaggerOptions, joiOptions?: Joi.ValidationOptions) {
     this.openapi = '3.0.0';
     this.paths = {};
+    this.tags = [];
     this.components = { schemas: {} };
 
     if (swaggerOptions) {
@@ -41,15 +43,16 @@ export class OpenApiSchema {
     this.init(controllers, swaggerOptions || {}, joiOptions);
   }
 
-  private init(controllers: RestControllerInfo[], swaggerOptions: ISwaggerOptions, joiOptions?: Joi.ValidationOptions) {
-
+  private init(controllers: RestControllerInfo[], swaggerOptions: ISwaggerOptions, joiOptions?: Joi.ValidationOptions): void {
     const pathsUrlParams: IPathsUrlParams = {};
 
     for (const controller of controllers) {
-      for (const method of controller.methods) {
+      const tagName: string = controller.controllerInfo.prefix || 'base';
+      const swaggerCtrlConfig: ISwagger = metadata.controller.getControllerSwagger(controller.controllerInfo.classInstance);
+      this.tags.push(Object.assign({ name: tagName }, swaggerCtrlConfig ? swaggerCtrlConfig.tag : {}));
 
+      for (const method of controller.methods) {
         const swaggerMethodConfig: ISwagger = metadata.controller.getControllerMethodSwagger(controller.controllerInfo.classInstance, method.name);
-        const swaggerCtrlConfig: ISwagger = metadata.controller.getControllerSwagger(controller.controllerInfo.classInstance);
 
         if (this.isAllowed(swaggerMethodConfig, swaggerCtrlConfig, swaggerOptions)) {
           const schema: IValidationSchema = metadata.controller.getMethodValidationSchema(controller.controllerInfo.classInstance, method.name);
@@ -57,12 +60,12 @@ export class OpenApiSchema {
           pathsUrlParams[method.httpPath] = pathsUrlParams[method.httpPath] || this.getUrlWithParams(method.httpPath);
           const urlWithParams: IParsedUrl = pathsUrlParams[method.httpPath];
           const presence: Joi.PresenceMode = joiOptions && joiOptions.presence ? joiOptions.presence : 'required';
-
           const action: IAction = {
-            tags: [ controller.controllerInfo.prefix || 'base' ], parameters: [], security: [],
+            tags: [ tagName ], parameters: [], security: [],
             operationId: `${method.httpMethod}${controller.controllerInfo.prefix ? `-${controller.controllerInfo.prefix}` : ''}`
           };
 
+          this.setSummary(action, swaggerMethodConfig, swaggerCtrlConfig);
           this.setRequestParams(action, urlWithParams.pathParams, presence, schema) ;
           this.setRequestBody(action, presence, schema, filesUpload);
           this.setResponses(action, swaggerMethodConfig.responses);
@@ -80,12 +83,20 @@ export class OpenApiSchema {
   }
 
   private isAllowed(methodConfig: ISwagger, ctrlConfig: ISwagger, swaggerOptions?: ISwaggerOptions): boolean {
-
     let availableForSwagger = swaggerOptions && swaggerOptions.hasOwnProperty('enableForAll') ? <boolean> swaggerOptions.enableForAll : true;
     availableForSwagger = ctrlConfig && ctrlConfig.hasOwnProperty('enable') ? <boolean> ctrlConfig.enable : availableForSwagger;
     availableForSwagger = methodConfig && methodConfig.hasOwnProperty('enable') ? <boolean> methodConfig.enable : availableForSwagger;
 
     return availableForSwagger;
+  }
+
+  private setSummary(action: IAction, methodConfig?: ISwagger, ctrlConfig?: ISwagger): void {
+    if (methodConfig && methodConfig.summary) {
+      action.summary = methodConfig.summary;
+    }
+    else if (ctrlConfig && ctrlConfig.summary){
+      action.summary = ctrlConfig.summary;
+    }
   }
 
   private setRequestParams(action: IAction, urlParams: string[], presence: string, schema?: IValidationSchema): void {
@@ -126,7 +137,6 @@ export class OpenApiSchema {
   }
 
   private setRequestBody(action: IAction, presence: string, schema?: IValidationSchema, files?: IFileUpload[]): void {
-
     if (files && files.length > 0) {
       const schemaBody = schema && schema.body ? OpenApiSchema.parseTypes(schema.body.describe(), presence) : { type: 'object', properties: {} };
       schemaBody.properties = schemaBody.properties || {};
@@ -180,12 +190,11 @@ export class OpenApiSchema {
     }
   }
 
-  private setSecurity(action: IAction, methodConfig: ISwagger, ctrlConfig: ISwagger, securityOptions?: ISwaggerSecurityOptions): void {
-
+  private setSecurity(action: IAction, methodConfig?: ISwagger, ctrlConfig?: ISwagger, securityOptions?: ISwaggerSecurityOptions): void {
     if (methodConfig && methodConfig.securityDefinitions) {
       this.setValidSecurityKeys(action, methodConfig.securityDefinitions);
     }
-    else if (ctrlConfig && ctrlConfig.applyForAll && ctrlConfig.securityDefinitions) {
+    else if (ctrlConfig && ctrlConfig.securityDefinitions) {
       this.setValidSecurityKeys(action, ctrlConfig.securityDefinitions);
     }
     else if (securityOptions && securityOptions.applyForAll && this.securityDefinitions) {
@@ -194,7 +203,6 @@ export class OpenApiSchema {
   }
 
   private setValidSecurityKeys(action: IAction, selectedSecurityKeys: ISwaggerSecurityKeys): void {
-
     if (this.securityDefinitions) {
       if (selectedSecurityKeys.basicAuth && this.securityDefinitions.basicAuth) {
         action.security.push({ basicAuth: [] });
@@ -216,13 +224,11 @@ export class OpenApiSchema {
     for (const urlPart of url.split('/')) {
       if (urlPart !== '') {
         if (urlPart.startsWith(':')) {
-
           const pathParam: string = urlPart.substring(1);
           pathParams.push(pathParam);
           fullPath = `${fullPath}/{${pathParam}}`;
         }
         else {
-
           fullPath = `${fullPath}/${urlPart}`;
         }
       }
@@ -252,7 +258,6 @@ export class OpenApiSchema {
   }
 
   public static parseTypes(propertySchema: Joi.Description, presence: string): JsonSchema {
-
     switch (propertySchema.type) {
       case 'object':
         return new ObjectType(presence, propertySchema.keys, this.getSchemaRules(propertySchema, presence));

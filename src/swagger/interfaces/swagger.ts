@@ -24,6 +24,18 @@ export interface ISwaggerConfig {
   options?: ISwaggerOptions;
 }
 
+export interface ISwaggerTagConfig {
+  description?: string;
+  externalDocs?: {
+    description: string,
+    url: string
+  };
+}
+
+export interface ISwaggerTag extends ISwaggerTagConfig {
+  name: string;
+}
+
 export interface ISwaggerAppInfo {
   description?: string;
   version?: string;
@@ -54,9 +66,9 @@ export interface IHttpResponseSchema {
 }
 
 export interface ISwagger {
-  applyForAll?: boolean;
   enable?: boolean;
-  description?: string;
+  summary?: string;
+  tag?: ISwaggerTagConfig;
   responses?: IHttpResponseSchema[];
   securityDefinitions?: ISwaggerSecurityKeys;
 }
@@ -142,6 +154,8 @@ export interface IAction {
   tags: string[];
   parameters: IParameter[];
   operationId: string;
+  security: IActionSecurity[];
+  summary?: string;
   requestBody?: { required?: boolean, content: { [key: string]: { schema: { $ref: string } | JsonSchema } } };
   responses?: {
     [key: number]: {
@@ -149,7 +163,6 @@ export interface IAction {
       content?: { [key: string]: { schema: { $ref: string } | { type: string, items: { $ref: string } } } }
     }
   };
-  security: IActionSecurity[];
 }
 
 export interface IActionSecurity { [key: string]: []; }

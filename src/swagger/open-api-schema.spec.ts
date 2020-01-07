@@ -36,7 +36,7 @@ describe('swagger/open-api-schema', () => {
 
         const openApiSchema = new OpenApiSchema(controllers, { info: {} });
         expect(openApiSchema).to.deep.equals({
-          openapi: '3.0.0', servers: [], info: {}, components: { schemas: {} },
+          openapi: '3.0.0', servers: [], info: {}, components: { schemas: {} }, tags: [{ name: 'controller1' }],
           paths: {
             '/controller1': {
               get: { tags: ['controller1'], security: [], operationId: 'get-controller1', parameters: [], responses: { 200: { description: '' } } }
