@@ -21,26 +21,27 @@ export class NumberType implements IDataType {
 
   setConstraints(constraints: IPropertyRule[]) {
     for (const constraint of constraints) {
-
       switch (constraint.name) {
         case 'max':
-          this.maximum = typeof constraint.value === 'number' ? constraint.value : 0;
+          this.maximum = <number> constraint.value;
           break;
 
         case 'min':
-          this.minimum = typeof constraint.value === 'number' ? constraint.value : 0;
+          this.minimum = <number> constraint.value;
           break;
 
         case 'required':
-          this.required = typeof constraint.value === 'boolean' ? constraint.value : false;
+          this.required = <boolean> constraint.value;
           break;
 
         case 'default':
-          this.default = typeof constraint.value === 'number' ? constraint.value : 0;
+          if (typeof constraint.value === 'number') {
+            this.default = constraint.value;
+          }
           break;
 
         case 'description':
-          this.description = typeof constraint.value === 'string' ? constraint.value : '';
+          this.description = <string> constraint.value;
           break;
 
         case 'examples':
@@ -57,9 +58,6 @@ export class NumberType implements IDataType {
 
         case 'integer':
           this.type = 'integer';
-          break;
-
-        default:
           break;
       }
     }

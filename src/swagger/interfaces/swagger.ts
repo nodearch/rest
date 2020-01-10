@@ -5,7 +5,7 @@ export interface ISwaggerOptions {
   servers?: ISwaggerAPIServer[];
   basePath?: string;
   schemes?: string[];
-  enableForAll?: boolean;
+  enableAll?: boolean;
   security?: ISwaggerSecurityOptions;
 }
 
@@ -16,7 +16,7 @@ export interface ISwaggerSecurityOptions {
 
 export interface ISwaggerSecurityConfig {
   basicAuth?: boolean;
-  apiKeysAuth?: [{ key: string, in?: ApiKeyIn }];
+  apiKeysAuth?: { key: string, in?: ApiKeyIn }[];
 }
 
 export interface ISwaggerConfig {

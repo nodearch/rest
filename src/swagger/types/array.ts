@@ -8,7 +8,7 @@ export class ArrayType implements IDataType {
   public items: JsonSchema;
   public maxItems?: number;
   public minItems?: number;
-  public default?: any;
+  public default?: any[];
   public required?: boolean;
   public example?: any[];
   public description?: string;
@@ -26,26 +26,27 @@ export class ArrayType implements IDataType {
 
   setConstraints(constraints: IPropertyRule[]) {
     for (const constraint of constraints) {
-
       switch (constraint.name) {
         case 'max':
-          this.maxItems = typeof constraint.value === 'number' ? constraint.value : 0;
+          this.maxItems = <number> constraint.value;
           break;
 
         case 'min':
-          this.minItems = typeof constraint.value === 'number' ? constraint.value : 0;
+          this.minItems = <number> constraint.value;
           break;
 
         case 'required':
-          this.required = typeof constraint.value === 'boolean' ? constraint.value : false;
+          this.required = <boolean> constraint.value;
           break;
 
         case 'default':
-          this.default = typeof constraint.value === 'object' ? constraint.value : [];
+          if (Array.isArray(constraint.value)) {
+            this.default = constraint.value;
+          }
           break;
 
         case 'description':
-          this.description = typeof constraint.value === 'string' ? constraint.value : '';
+          this.description = <string> constraint.value;
           break;
 
         case 'examples':
@@ -56,9 +57,6 @@ export class ArrayType implements IDataType {
 
         case 'unique':
           this.uniqueItems = true;
-          break;
-
-        default:
           break;
       }
     }

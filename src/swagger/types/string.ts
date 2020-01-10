@@ -25,26 +25,27 @@ export class StringType implements IDataType {
 
   setConstraints(constraints: IPropertyRule[]) {
     for (const constraint of constraints) {
-
       switch (constraint.name) {
         case 'max':
-          this.maxLength = typeof constraint.value === 'number' ? constraint.value : 0;
+          this.maxLength = <number> constraint.value;
           break;
 
         case 'min':
-          this.minLength = typeof constraint.value === 'number' ? constraint.value : 0;
+          this.minLength = <number> constraint.value;
           break;
 
         case 'required':
-          this.required = typeof constraint.value === 'boolean' ? constraint.value : false;
+          this.required = <boolean> constraint.value;
           break;
 
         case 'default':
-          this.default = typeof constraint.value === 'string' ? constraint.value : '';
+          if (typeof constraint.value === 'string') {
+            this.default = constraint.value;
+          }
           break;
 
         case 'description':
-          this.description = typeof constraint.value === 'string' ? constraint.value : '';
+          this.description = <string> constraint.value;
           break;
 
         case 'examples':

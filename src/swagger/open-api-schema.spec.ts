@@ -6,28 +6,31 @@ import * as metadata from '../metadata';
 import { HttpMethod } from '../enums';
 import Joi from '@hapi/joi';
 import { ISwagger } from './interfaces';
+import { ApiKeyIn } from './enums';
 
 describe('swagger/open-api-schema', () => {
 
   let getMethodValidationSchema: SinonStub<any, any>, getControllerMethodSwagger: SinonStub<any, any>,
-    getMethodFileUpload: SinonStub<any, any>;
+    getMethodFileUpload: SinonStub<any, any>, getControllerSwagger: SinonStub<any, any>;
 
   beforeEach(() => {
     getMethodValidationSchema = stub(metadata.controller, 'getMethodValidationSchema').returns({});
     getControllerMethodSwagger = stub(metadata.controller, 'getControllerMethodSwagger').returns({});
+    getControllerSwagger = stub(metadata.controller, 'getControllerSwagger').returns({});
     getMethodFileUpload = stub(metadata.controller, 'getMethodFileUpload').returns([]);
   });
 
   afterEach(() => {
     getMethodValidationSchema.restore();
     getControllerMethodSwagger.restore();
+    getControllerSwagger.restore();
     getMethodFileUpload.restore();
   });
 
   describe('OpenApiSchema', () => {
 
     describe('One Controller One End Point', () => {
-      it('no joi or swagger options or no response schema', () => {
+      it('Should return swagger for end point have basic config', () => {
 
         const controllers: any[] = [{
           controllerInfo: { classInstance: {}, prefix: 'controller1', methods: [{ name: 'find' }] },
@@ -45,7 +48,7 @@ describe('swagger/open-api-schema', () => {
         });
       });
 
-      it('with joi but swagger options or no response schema', () => {
+      it('Should return swagger for end point have simple joi schema config', () => {
 
         const controllers: any[] = [{
           controllerInfo: { classInstance: {}, prefix: '', methods: [{ name: 'create' }] },
@@ -78,7 +81,7 @@ describe('swagger/open-api-schema', () => {
         });
       });
 
-      it('with joi & swagger options but no response schema', () => {
+      it('Should return swagger for end point have complex joi schema config', () => {
 
         const controllers: any[] = [{
           controllerInfo: { classInstance: {}, prefix: 'controller2', methods: [{ name: 'update' }] },
@@ -129,7 +132,31 @@ describe('swagger/open-api-schema', () => {
         });
       });
 
-      it('with joi & swagger options & response schema & file upload', () => {
+      it('Should return swagger for end point have file upload', () => {
+
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: 'controller2', methods: [{ name: 'update' }] },
+          methods: [{ httpPath: '/controller2/test/:id/test', httpMethod: HttpMethod.PUT, name: 'update' }]
+        }];
+
+        getMethodFileUpload.returns([{ name: 'file1' }, { name: 'file2', maxCount: 3 }]);
+
+        const openApiSchema = new OpenApiSchema(controllers, { servers: [{ url: 'http://test.com' }] }, { presence: 'optional' });
+
+        expect(openApiSchema.paths).to.deep.nested.include({
+          '/controller2/test/{id}/test.put.tags': ['controller2'],
+          '/controller2/test/{id}/test.put.operationId': 'put-controller2',
+          '/controller2/test/{id}/test.put.requestBody.content.multipart/form-data.schema': {
+            type: 'object',
+            properties: {
+              file1: { type: 'string', format: 'binary' },
+              file2: { type: 'array', maxItems: 3, items: { type: 'string', format: 'binary' } }
+            }
+          }
+        });
+      });
+
+      it('Should return swagger for end point have complex joi schema config & swagger responses & file upload', () => {
 
         const controllers: any[] = [{
           controllerInfo: { classInstance: {}, prefix: 'controller2', methods: [{ name: 'update' }] },
@@ -227,7 +254,7 @@ describe('swagger/open-api-schema', () => {
         });
       });
 
-      it('text request & text response', () => {
+      it('Should return swagger for text end point have simple joi schema config & text response', () => {
 
         const controllers: any[] = [{
           controllerInfo: { classInstance: {}, prefix: 'controller1', methods: [{ name: 'find' }] },
@@ -283,8 +310,218 @@ describe('swagger/open-api-schema', () => {
         });
       });
 
-    });
+      it('Should return swagger for end point have simple joi schema config, tag, basic auth', () => {
 
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: '', methods: [{ name: 'create' }] },
+          methods: [{ httpPath: '/test/:id/test/:name', httpMethod: HttpMethod.POST, name: 'create' }]
+        }];
+
+        getMethodValidationSchema.returns({
+          body: Joi.object().keys({ name: Joi.string().required(), age: Joi.number().optional() }),
+          params: Joi.object().keys({ name: Joi.string().pattern(/^./).optional() })
+        });
+
+        getControllerSwagger.returns({ tag: { description: 'test' } });
+
+        const openApiSchema = new OpenApiSchema(controllers, { security: { applyForAll: true, definitions: { basicAuth: true } } });
+
+        expect(openApiSchema.tags[0]).to.deep.equals({ name: 'base', description: 'test' });
+        expect(openApiSchema.securityDefinitions).to.deep.equals({ basicAuth: { type: 'basic' } });
+
+        expect(openApiSchema.paths).to.deep.nested.include({
+          '/test/{id}/test/{name}.post.tags': ['base'],
+          '/test/{id}/test/{name}.post.operationId': 'post',
+          '/test/{id}/test/{name}.post.security': [{ basicAuth: [] }]
+        });
+      });
+
+      it('Should return swagger for end point apiKey auth', () => {
+
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: '', methods: [{ name: 'create' }] },
+          methods: [{ httpPath: '/test/:id/test/:name', httpMethod: HttpMethod.POST, name: 'create' }]
+        }];
+
+        getControllerSwagger.returns({ securityDefinitions: { basicAuth: true, apiKeysAuth: ['authKey2'] } });
+        getControllerMethodSwagger.returns({ securityDefinitions: { apiKeysAuth: ['authKey2'] } });
+
+        const openApiSchema = new OpenApiSchema(controllers, {
+          security: { applyForAll: true, definitions: {
+            basicAuth: true,
+            apiKeysAuth: [{ key: 'authKey1' }, { key: 'authKey2', in: ApiKeyIn.Query }] }
+          }
+        });
+
+        expect(openApiSchema.securityDefinitions).to.deep.equals({
+          basicAuth: { type: 'basic' },
+          authKey1: { type: 'apiKey', name: 'authKey1', in: 'header' },
+          authKey2: { type: 'apiKey', name: 'authKey2', in: 'query' }
+        });
+
+        expect(openApiSchema.paths).to.deep.nested.include({
+          '/test/{id}/test/{name}.post.tags': ['base'],
+          '/test/{id}/test/{name}.post.operationId': 'post',
+          '/test/{id}/test/{name}.post.security': [{ authKey2: [] }]
+        });
+      });
+
+      it('Should return swagger for end point basicAuth, summary', () => {
+
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: '', methods: [{ name: 'create' }] },
+          methods: [{ httpPath: '/test/:id/test/:name', httpMethod: HttpMethod.POST, name: 'create' }]
+        }];
+
+        getControllerSwagger.returns(null);
+        getControllerMethodSwagger.returns({ securityDefinitions: { basicAuth: true }, summary: 'method summary' });
+
+        const openApiSchema = new OpenApiSchema(controllers, {
+          security: { applyForAll: true, definitions: {
+            basicAuth: true,
+            apiKeysAuth: [{ key: 'authKey1' }] }
+          }
+        });
+
+        expect(openApiSchema.securityDefinitions).to.deep.equals({
+          basicAuth: { type: 'basic' },
+          authKey1: { type: 'apiKey', name: 'authKey1', in: 'header' }
+        });
+
+        expect(openApiSchema.paths).to.deep.nested.include({
+          '/test/{id}/test/{name}.post.tags': ['base'],
+          '/test/{id}/test/{name}.post.operationId': 'post',
+          '/test/{id}/test/{name}.post.security': [{ basicAuth: [] }],
+          '/test/{id}/test/{name}.post.summary': 'method summary'
+        });
+      });
+
+      it('Should return swagger for end point multi auth, summary', () => {
+
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: '', methods: [{ name: 'create' }] },
+          methods: [{ httpPath: '/test/:id/test/:name', httpMethod: HttpMethod.POST, name: 'create' }]
+        }];
+
+        getControllerSwagger.returns({ securityDefinitions: { basicAuth: true, apiKeysAuth: ['authKey2'] }, summary: 'ctrl summary' });
+
+        const openApiSchema = new OpenApiSchema(controllers, {
+          security: { applyForAll: true, definitions: {
+            basicAuth: true,
+            apiKeysAuth: [{ key: 'authKey1' }, { key: 'authKey2', in: ApiKeyIn.Query }] }
+          }
+        });
+
+        expect(openApiSchema.securityDefinitions).to.deep.equals({
+          basicAuth: { type: 'basic' },
+          authKey1: { type: 'apiKey', name: 'authKey1', in: 'header' },
+          authKey2: { type: 'apiKey', name: 'authKey2', in: 'query' }
+        });
+
+        expect(openApiSchema.paths).to.deep.nested.include({
+          '/test/{id}/test/{name}.post.tags': ['base'],
+          '/test/{id}/test/{name}.post.operationId': 'post',
+          '/test/{id}/test/{name}.post.security': [{ basicAuth: [] }, { authKey2: [] }],
+          '/test/{id}/test/{name}.post.summary': 'ctrl summary'
+        });
+      });
+
+      it('Should disable entire app end points', () => {
+
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: '', methods: [{ name: 'create' }] },
+          methods: [{ httpPath: '/test/:id/test/:name', httpMethod: HttpMethod.POST, name: 'create' }]
+        }];
+
+        getControllerSwagger.returns({ securityDefinitions: { basicAuth: true, apiKeysAuth: ['authKey2'] }, summary: 'ctrl summary' });
+
+        const openApiSchema = new OpenApiSchema(controllers, {
+          security: { applyForAll: true, definitions: {
+            basicAuth: true,
+            apiKeysAuth: [{ key: 'authKey1' }, { key: 'authKey2', in: ApiKeyIn.Query }] }
+          },
+          enableAll: false
+        });
+
+        expect(openApiSchema.securityDefinitions).to.deep.equals({
+          basicAuth: { type: 'basic' },
+          authKey1: { type: 'apiKey', name: 'authKey1', in: 'header' },
+          authKey2: { type: 'apiKey', name: 'authKey2', in: 'query' }
+        });
+
+        expect(openApiSchema.paths).to.deep.equal({});
+      });
+
+      it('Should disable entire controller end points', () => {
+
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: '', methods: [{ name: 'create' }] },
+          methods: [{ httpPath: '/test/:id/test/:name', httpMethod: HttpMethod.POST, name: 'create' }]
+        }];
+
+        getControllerSwagger.returns({ enable: false });
+
+        const openApiSchema = new OpenApiSchema(controllers, {
+          enableAll: true
+        });
+
+        expect(openApiSchema.paths).to.deep.equal({});
+      });
+
+      it('Should disable one controller end point', () => {
+
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: '', methods: [{ name: 'create' }] },
+          methods: [{ httpPath: '/test/:id/test/:name', httpMethod: HttpMethod.POST, name: 'create' }]
+        }];
+
+        getControllerSwagger.returns({ enable: true });
+        getControllerMethodSwagger.returns({ enable: false });
+
+        const openApiSchema = new OpenApiSchema(controllers, {
+          enableAll: true
+        });
+
+        expect(openApiSchema.paths).to.deep.equal({});
+      });
+
+      it('Should enable one controller and override main config', () => {
+
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: '', methods: [{ name: 'create' }] },
+          methods: [{ httpPath: '/test/:id/test/:name', httpMethod: HttpMethod.POST, name: 'create' }]
+        }];
+
+        getControllerSwagger.returns({ enable: true });
+
+        const openApiSchema = new OpenApiSchema(controllers, {
+          enableAll: false
+        });
+
+        expect(openApiSchema.paths).to.deep.nested.include({
+          '/test/{id}/test/{name}.post.tags': ['base']
+        });
+      });
+
+      it('Should enable one method controller and override main config & controller', () => {
+
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: '', methods: [{ name: 'create' }] },
+          methods: [{ httpPath: '/test/:id/test/:name', httpMethod: HttpMethod.POST, name: 'create' }]
+        }];
+
+        getControllerSwagger.returns({ enable: false });
+        getControllerMethodSwagger.returns({ enable: true });
+
+        const openApiSchema = new OpenApiSchema(controllers, {
+          enableAll: false
+        });
+
+        expect(openApiSchema.paths).to.deep.nested.include({
+          '/test/{id}/test/{name}.post.tags': ['base']
+        });
+      });
+    });
   });
 
 });

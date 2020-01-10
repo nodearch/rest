@@ -19,19 +19,19 @@ export class BoolType implements IDataType {
 
   setConstraints(constraints: IPropertyRule[]) {
     for (const constraint of constraints) {
-
       switch (constraint.name) {
-
         case 'required':
-          this.required = typeof constraint.value === 'boolean' ? constraint.value : false;
+          this.required = <boolean> constraint.value;
           break;
 
         case 'default':
-          this.default = typeof constraint.value === 'boolean' ? constraint.value : false;
+          if (typeof constraint.value === 'boolean') {
+            this.default = constraint.value;
+          }
           break;
 
         case 'description':
-          this.description = typeof constraint.value === 'string' ? constraint.value : '';
+          this.description = <string> constraint.value;
           break;
 
         case 'examples':
@@ -44,8 +44,6 @@ export class BoolType implements IDataType {
           if (Array.isArray(constraint.value)) {
             this.enum = constraint.value;
           }
-          break;
-        default:
           break;
       }
     }

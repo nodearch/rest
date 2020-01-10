@@ -83,7 +83,7 @@ export class OpenApiSchema {
   }
 
   private isAllowed(methodConfig: ISwagger, ctrlConfig: ISwagger, swaggerOptions?: ISwaggerOptions): boolean {
-    let availableForSwagger = swaggerOptions && swaggerOptions.hasOwnProperty('enableForAll') ? <boolean> swaggerOptions.enableForAll : true;
+    let availableForSwagger = swaggerOptions && swaggerOptions.hasOwnProperty('enableAll') ? <boolean> swaggerOptions.enableAll : true;
     availableForSwagger = ctrlConfig && ctrlConfig.hasOwnProperty('enable') ? <boolean> ctrlConfig.enable : availableForSwagger;
     availableForSwagger = methodConfig && methodConfig.hasOwnProperty('enable') ? <boolean> methodConfig.enable : availableForSwagger;
 
@@ -198,7 +198,7 @@ export class OpenApiSchema {
       this.setValidSecurityKeys(action, ctrlConfig.securityDefinitions);
     }
     else if (securityOptions && securityOptions.applyForAll && this.securityDefinitions) {
-      action.security.concat(Object.keys(this.securityDefinitions).map(secDef => ({ [secDef]: [] })));
+      action.security = action.security.concat(Object.keys(this.securityDefinitions).map(secDef => ({ [secDef]: [] })));
     }
   }
 
@@ -207,10 +207,11 @@ export class OpenApiSchema {
       if (selectedSecurityKeys.basicAuth && this.securityDefinitions.basicAuth) {
         action.security.push({ basicAuth: [] });
       }
-      else if (selectedSecurityKeys.apiKeysAuth) {
+
+      if (selectedSecurityKeys.apiKeysAuth) {
         for (const authKey of selectedSecurityKeys.apiKeysAuth) {
           if (this.securityDefinitions[authKey]) {
-            action.security.push({ basicAuth: [] });
+            action.security.push({ [authKey]: [] });
           }
         }
       }
@@ -324,9 +325,5 @@ export class OpenApiSchema {
     }
 
     return rules;
-  }
-
-  public async writeOpenAPI(dir: string): Promise<void> {
-    await fs.writeFile(path.join(dir, 'swagger.json'), JSON.stringify(this));
   }
 }

@@ -8,7 +8,7 @@ export class ObjectType implements IDataType, IObjectType {
   public properties?: ISchemaProperties;
   public maxProperties?: number;
   public minProperties?: number;
-  public default?: any;
+  public default?: object;
   public required?: boolean;
   public example?: object;
   public description?: string;
@@ -35,35 +35,33 @@ export class ObjectType implements IDataType, IObjectType {
 
   setConstraints(constraints: IPropertyRule[]) {
     for (const constraint of constraints) {
-
       switch (constraint.name) {
         case 'max':
-          this.maxProperties = typeof constraint.value === 'number' ? constraint.value : 0;
+          this.maxProperties = <number> constraint.value;
           break;
 
         case 'min':
-          this.minProperties = typeof constraint.value === 'number' ? constraint.value : 0;
+          this.minProperties = <number> constraint.value;
           break;
 
         case 'required':
-          this.required = typeof constraint.value === 'boolean' ? constraint.value : false;
+          this.required = <boolean> constraint.value;
           break;
 
         case 'default':
-          this.default = typeof constraint.value === 'object' ? constraint.value : {};
+          if (typeof constraint.value === 'object') {
+            this.default = <object> constraint.value;
+          }
           break;
 
         case 'description':
-          this.description = typeof constraint.value === 'string' ? constraint.value : '';
+          this.description = <string> constraint.value;
           break;
 
         case 'examples':
           if (Array.isArray(constraint.value) && typeof constraint.value[0] === 'object') {
               this.example = constraint.value[0];
           }
-          break;
-
-        default:
           break;
       }
     }
