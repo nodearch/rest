@@ -31,7 +31,7 @@ export class OpenApiSchema {
       this.servers = swaggerOptions.servers || [];
       this.info = swaggerOptions.info || {};
 
-      if (swaggerOptions.security && swaggerOptions.security.definitions) {
+      if (swaggerOptions.security?.definitions) {
         this.securityDefinitions = this.getSecurityDefinitions(swaggerOptions.security.definitions);
       }
     }
@@ -82,19 +82,19 @@ export class OpenApiSchema {
     }
   }
 
-  private isAllowed(methodConfig: ISwagger, ctrlConfig: ISwagger, swaggerOptions?: ISwaggerOptions): boolean {
-    let availableForSwagger = swaggerOptions && swaggerOptions.hasOwnProperty('enableAllRoutes') ? <boolean> swaggerOptions.enableAllRoutes : true;
-    availableForSwagger = ctrlConfig && ctrlConfig.hasOwnProperty('enable') ? <boolean> ctrlConfig.enable : availableForSwagger;
-    availableForSwagger = methodConfig && methodConfig.hasOwnProperty('enable') ? <boolean> methodConfig.enable : availableForSwagger;
+  private isAllowed(methodConfig?: ISwagger, ctrlConfig?: ISwagger, swaggerOptions?: ISwaggerOptions): boolean {
+    let availableForSwagger = swaggerOptions?.hasOwnProperty('enableAllRoutes') ? <boolean> swaggerOptions.enableAllRoutes : true;
+    availableForSwagger = ctrlConfig?.hasOwnProperty('enable') ? <boolean> ctrlConfig.enable : availableForSwagger;
+    availableForSwagger = methodConfig?.hasOwnProperty('enable') ? <boolean> methodConfig.enable : availableForSwagger;
 
     return availableForSwagger;
   }
 
   private setSummary(action: IAction, methodConfig?: ISwagger, ctrlConfig?: ISwagger): void {
-    if (methodConfig && methodConfig.summary) {
+    if (methodConfig?.summary) {
       action.summary = methodConfig.summary;
     }
-    else if (ctrlConfig && ctrlConfig.summary){
+    else if (ctrlConfig?.summary){
       action.summary = ctrlConfig.summary;
     }
   }
@@ -137,7 +137,7 @@ export class OpenApiSchema {
   }
 
   private setRequestBody(action: IAction, presence: string, schema?: IValidationSchema, files?: IFileUpload[]): void {
-    if (files && files.length > 0) {
+    if (files?.length) {
       const schemaBody = schema && schema.body ? OpenApiSchema.parseTypes(schema.body.describe(), presence) : { type: 'object', properties: {} };
       schemaBody.properties = schemaBody.properties || {};
 
@@ -152,7 +152,7 @@ export class OpenApiSchema {
       delete schemaBody.required;
       action.requestBody = { content: { 'multipart/form-data': { schema: schemaBody } } };
     }
-    else if (schema && schema.body) {
+    else if (schema?.body) {
       const definitionKey: string = `${action.operationId}-body`;
       const bodySchema: JsonSchema = OpenApiSchema.parseTypes(schema.body.describe(), presence);
       this.components.schemas[definitionKey] = bodySchema;
@@ -168,7 +168,7 @@ export class OpenApiSchema {
   private setResponses(action: IAction, httpResponses?: IHttpResponseSchema[]): void {
     action.responses = {};
 
-    if (httpResponses && httpResponses.length > 0) {
+    if (httpResponses?.length) {
       for (const httpRes of httpResponses) {
         action.responses[httpRes.status] = { description: httpRes.description || '' };
 
@@ -191,13 +191,13 @@ export class OpenApiSchema {
   }
 
   private setSecurity(action: IAction, methodConfig?: ISwagger, ctrlConfig?: ISwagger, securityOptions?: ISwaggerSecurityOptions): void {
-    if (methodConfig && methodConfig.securityDefinitions) {
+    if (methodConfig?.securityDefinitions) {
       this.setValidSecurityKeys(action, methodConfig.securityDefinitions);
     }
-    else if (ctrlConfig && ctrlConfig.securityDefinitions) {
+    else if (ctrlConfig?.securityDefinitions) {
       this.setValidSecurityKeys(action, ctrlConfig.securityDefinitions);
     }
-    else if (securityOptions && securityOptions.enableAllRoutes && this.securityDefinitions) {
+    else if (securityOptions?.enableAllRoutes && this.securityDefinitions) {
       action.security = action.security.concat(Object.keys(this.securityDefinitions).map(secDef => ({ [secDef]: [] })));
     }
   }
@@ -245,7 +245,7 @@ export class OpenApiSchema {
       securityDefinitions.basicAuth = { type: 'basic' };
     }
 
-    if (securityConfig.apiKeysAuth && securityConfig.apiKeysAuth.length) {
+    if (securityConfig.apiKeysAuth?.length) {
       for (const authKey of securityConfig.apiKeysAuth) {
         securityDefinitions[authKey.key] = {
           name: authKey.key,
@@ -303,7 +303,7 @@ export class OpenApiSchema {
       }
     }
 
-    if (schema.flags && schema.flags.presence) {
+    if (schema.flags?.presence) {
       rules.push({ name: 'required', value: schema.flags.presence === 'required' ? true : false  });
     }
     else {

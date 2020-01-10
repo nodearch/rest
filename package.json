@@ -48,7 +48,7 @@
     "sinon": "^7.4.2",
     "supertest": "^4.0.2",
     "ts-node": "^8.3.0",
-    "typescript": "^3.5.2"
+    "typescript": "^3.7.4"
   },
   "peerDependencies": {
     "@nodearch/core": "0.x"
