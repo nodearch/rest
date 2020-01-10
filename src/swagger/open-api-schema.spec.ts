@@ -351,7 +351,7 @@ describe('swagger/open-api-schema', () => {
         const openApiSchema = new OpenApiSchema(controllers, { security: { enableAllRoutes: true, definitions: { basicAuth: true } } });
 
         expect(openApiSchema.tags[0]).to.deep.equals({ name: 'base', description: 'test' });
-        expect(openApiSchema.securityDefinitions).to.deep.equals({ basicAuth: { type: 'basic' } });
+        expect(openApiSchema.components.securitySchemes).to.deep.equals({ basicAuth: { type: 'http', scheme: 'basic' } });
 
         expect(openApiSchema.paths).to.deep.nested.include({
           '/test/{id}/test/{name}.post.tags': ['base'],
@@ -367,8 +367,8 @@ describe('swagger/open-api-schema', () => {
           methods: [{ httpPath: '/test/:id/test/:name', httpMethod: HttpMethod.POST, name: 'create' }]
         }];
 
-        getControllerSwagger.returns({ securityDefinitions: { basicAuth: true, apiKeysAuth: ['authKey2'] } });
-        getControllerMethodSwagger.returns({ securityDefinitions: { apiKeysAuth: ['authKey2'] } });
+        getControllerSwagger.returns({ securitySchemes: { basicAuth: true, apiKeysAuth: ['authKey2'] } });
+        getControllerMethodSwagger.returns({ securitySchemes: { apiKeysAuth: ['authKey2'] } });
 
         const openApiSchema = new OpenApiSchema(controllers, {
           security: { enableAllRoutes: true, definitions: {
@@ -377,8 +377,8 @@ describe('swagger/open-api-schema', () => {
           }
         });
 
-        expect(openApiSchema.securityDefinitions).to.deep.equals({
-          basicAuth: { type: 'basic' },
+        expect(openApiSchema.components.securitySchemes).to.deep.equals({
+          basicAuth: { type: 'http', scheme: 'basic' },
           authKey1: { type: 'apiKey', name: 'authKey1', in: 'header' },
           authKey2: { type: 'apiKey', name: 'authKey2', in: 'query' }
         });
@@ -398,7 +398,7 @@ describe('swagger/open-api-schema', () => {
         }];
 
         getControllerSwagger.returns(null);
-        getControllerMethodSwagger.returns({ securityDefinitions: { basicAuth: true }, summary: 'method summary' });
+        getControllerMethodSwagger.returns({ securitySchemes: { basicAuth: true }, summary: 'method summary' });
 
         const openApiSchema = new OpenApiSchema(controllers, {
           security: { enableAllRoutes: true, definitions: {
@@ -407,8 +407,8 @@ describe('swagger/open-api-schema', () => {
           }
         });
 
-        expect(openApiSchema.securityDefinitions).to.deep.equals({
-          basicAuth: { type: 'basic' },
+        expect(openApiSchema.components.securitySchemes).to.deep.equals({
+          basicAuth: { type: 'http', scheme: 'basic' },
           authKey1: { type: 'apiKey', name: 'authKey1', in: 'header' }
         });
 
@@ -427,7 +427,7 @@ describe('swagger/open-api-schema', () => {
           methods: [{ httpPath: '/test/:id/test/:name', httpMethod: HttpMethod.POST, name: 'create' }]
         }];
 
-        getControllerSwagger.returns({ securityDefinitions: { basicAuth: true, apiKeysAuth: ['authKey2'] }, summary: 'ctrl summary' });
+        getControllerSwagger.returns({ securitySchemes: { basicAuth: true, apiKeysAuth: ['authKey2'] }, summary: 'ctrl summary' });
 
         const openApiSchema = new OpenApiSchema(controllers, {
           security: { enableAllRoutes: true, definitions: {
@@ -436,8 +436,8 @@ describe('swagger/open-api-schema', () => {
           }
         });
 
-        expect(openApiSchema.securityDefinitions).to.deep.equals({
-          basicAuth: { type: 'basic' },
+        expect(openApiSchema.components.securitySchemes).to.deep.equals({
+          basicAuth: { type: 'http', scheme: 'basic' },
           authKey1: { type: 'apiKey', name: 'authKey1', in: 'header' },
           authKey2: { type: 'apiKey', name: 'authKey2', in: 'query' }
         });
@@ -457,7 +457,7 @@ describe('swagger/open-api-schema', () => {
           methods: [{ httpPath: '/test/:id/test/:name', httpMethod: HttpMethod.POST, name: 'create' }]
         }];
 
-        getControllerSwagger.returns({ securityDefinitions: { basicAuth: true, apiKeysAuth: ['authKey2'] }, summary: 'ctrl summary' });
+        getControllerSwagger.returns({ securitySchemes: { basicAuth: true, apiKeysAuth: ['authKey2'] }, summary: 'ctrl summary' });
 
         const openApiSchema = new OpenApiSchema(controllers, {
           security: { enableAllRoutes: true, definitions: {
@@ -467,8 +467,8 @@ describe('swagger/open-api-schema', () => {
           enableAllRoutes: false
         });
 
-        expect(openApiSchema.securityDefinitions).to.deep.equals({
-          basicAuth: { type: 'basic' },
+        expect(openApiSchema.components.securitySchemes).to.deep.equals({
+          basicAuth: { type: 'http', scheme: 'basic' },
           authKey1: { type: 'apiKey', name: 'authKey1', in: 'header' },
           authKey2: { type: 'apiKey', name: 'authKey2', in: 'query' }
         });

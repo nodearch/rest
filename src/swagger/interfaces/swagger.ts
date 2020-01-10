@@ -55,6 +55,7 @@ export interface ISwaggerSecurityDefinitions {
     type: string,
     name?: string,
     in?: string
+    scheme?: string
   };
 }
 
@@ -70,7 +71,7 @@ export interface ISwagger {
   summary?: string;
   tag?: ISwaggerTagConfig;
   responses?: IHttpResponseSchema[];
-  securityDefinitions?: ISwaggerSecurityKeys;
+  securitySchemes?: ISwaggerSecurityKeys;
 }
 
 export interface ISwaggerSecurityKeys {
@@ -188,4 +189,5 @@ export interface IComponents {
   schemas: {
     [key: string]: JsonSchema
   };
+  securitySchemes?: ISwaggerSecurityDefinitions
 }

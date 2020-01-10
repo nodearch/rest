@@ -18,7 +18,6 @@ export class OpenApiSchema {
   public readonly info: ISwaggerAppInfo;
   public readonly components: IComponents;
   public readonly paths: IPaths;
-  public readonly securityDefinitions?: ISwaggerSecurityDefinitions;
   public readonly tags: ISwaggerTag[];
 
   constructor(controllers: RestControllerInfo[], swaggerOptions?: ISwaggerOptions, joiOptions?: Joi.ValidationOptions) {
@@ -32,7 +31,7 @@ export class OpenApiSchema {
       this.info = swaggerOptions.info || {};
 
       if (swaggerOptions.security?.definitions) {
-        this.securityDefinitions = this.getSecurityDefinitions(swaggerOptions.security.definitions);
+        this.components.securitySchemes = this.getSecurityDefinitions(swaggerOptions.security.definitions);
       }
     }
     else {
@@ -191,26 +190,26 @@ export class OpenApiSchema {
   }
 
   private setSecurity(action: IAction, methodConfig?: ISwagger, ctrlConfig?: ISwagger, securityOptions?: ISwaggerSecurityOptions): void {
-    if (methodConfig?.securityDefinitions) {
-      this.setValidSecurityKeys(action, methodConfig.securityDefinitions);
+    if (methodConfig?.securitySchemes) {
+      this.setValidSecurityKeys(action, methodConfig.securitySchemes);
     }
-    else if (ctrlConfig?.securityDefinitions) {
-      this.setValidSecurityKeys(action, ctrlConfig.securityDefinitions);
+    else if (ctrlConfig?.securitySchemes) {
+      this.setValidSecurityKeys(action, ctrlConfig.securitySchemes);
     }
-    else if (securityOptions?.enableAllRoutes && this.securityDefinitions) {
-      action.security = action.security.concat(Object.keys(this.securityDefinitions).map(secDef => ({ [secDef]: [] })));
+    else if (securityOptions?.enableAllRoutes && this.components.securitySchemes) {
+      action.security = action.security.concat(Object.keys(this.components.securitySchemes).map(secDef => ({ [secDef]: [] })));
     }
   }
 
   private setValidSecurityKeys(action: IAction, selectedSecurityKeys: ISwaggerSecurityKeys): void {
-    if (this.securityDefinitions) {
-      if (selectedSecurityKeys.basicAuth && this.securityDefinitions.basicAuth) {
+    if (this.components.securitySchemes) {
+      if (selectedSecurityKeys.basicAuth && this.components.securitySchemes.basicAuth) {
         action.security.push({ basicAuth: [] });
       }
 
       if (selectedSecurityKeys.apiKeysAuth) {
         for (const authKey of selectedSecurityKeys.apiKeysAuth) {
-          if (this.securityDefinitions[authKey]) {
+          if (this.components.securitySchemes[authKey]) {
             action.security.push({ [authKey]: [] });
           }
         }
@@ -239,15 +238,15 @@ export class OpenApiSchema {
   }
 
   private getSecurityDefinitions(securityConfig: ISwaggerSecurityConfig): ISwaggerSecurityDefinitions {
-    const securityDefinitions: ISwaggerSecurityDefinitions = {};
+    const securitySchemes: ISwaggerSecurityDefinitions = {};
 
     if (securityConfig.basicAuth) {
-      securityDefinitions.basicAuth = { type: 'basic' };
+      securitySchemes.basicAuth = { type: 'http', scheme: 'basic' };
     }
 
     if (securityConfig.apiKeysAuth?.length) {
       for (const authKey of securityConfig.apiKeysAuth) {
-        securityDefinitions[authKey.key] = {
+        securitySchemes[authKey.key] = {
           name: authKey.key,
           type: 'apiKey',
           in: authKey.in || 'header'
@@ -255,7 +254,7 @@ export class OpenApiSchema {
       }
     }
 
-    return securityDefinitions;
+    return securitySchemes;
   }
 
   public static parseTypes(propertySchema: Joi.Description, presence: string): JsonSchema {
