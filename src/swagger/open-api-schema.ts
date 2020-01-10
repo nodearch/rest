@@ -83,7 +83,7 @@ export class OpenApiSchema {
   }
 
   private isAllowed(methodConfig: ISwagger, ctrlConfig: ISwagger, swaggerOptions?: ISwaggerOptions): boolean {
-    let availableForSwagger = swaggerOptions && swaggerOptions.hasOwnProperty('enableAll') ? <boolean> swaggerOptions.enableAll : true;
+    let availableForSwagger = swaggerOptions && swaggerOptions.hasOwnProperty('enableAllRoutes') ? <boolean> swaggerOptions.enableAllRoutes : true;
     availableForSwagger = ctrlConfig && ctrlConfig.hasOwnProperty('enable') ? <boolean> ctrlConfig.enable : availableForSwagger;
     availableForSwagger = methodConfig && methodConfig.hasOwnProperty('enable') ? <boolean> methodConfig.enable : availableForSwagger;
 
@@ -197,7 +197,7 @@ export class OpenApiSchema {
     else if (ctrlConfig && ctrlConfig.securityDefinitions) {
       this.setValidSecurityKeys(action, ctrlConfig.securityDefinitions);
     }
-    else if (securityOptions && securityOptions.applyForAll && this.securityDefinitions) {
+    else if (securityOptions && securityOptions.enableAllRoutes && this.securityDefinitions) {
       action.security = action.security.concat(Object.keys(this.securityDefinitions).map(secDef => ({ [secDef]: [] })));
     }
   }

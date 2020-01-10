@@ -132,7 +132,31 @@ describe('swagger/open-api-schema', () => {
         });
       });
 
-      it('Should return swagger for end point have file upload', () => {
+      it('Should return swagger for end point have one file upload', () => {
+
+        const controllers: any[] = [{
+          controllerInfo: { classInstance: {}, prefix: 'controller2', methods: [{ name: 'update' }] },
+          methods: [{ httpPath: '/controller2/test/:id/test', httpMethod: HttpMethod.PUT, name: 'update' }]
+        }];
+
+        getMethodFileUpload.returns([{ name: 'file1' }]);
+        getMethodValidationSchema.returns({ body: Joi.object() });
+
+        const openApiSchema = new OpenApiSchema(controllers, { servers: [{ url: 'http://test.com' }] }, { presence: 'optional' });
+
+        expect(openApiSchema.paths).to.deep.nested.include({
+          '/controller2/test/{id}/test.put.tags': ['controller2'],
+          '/controller2/test/{id}/test.put.operationId': 'put-controller2',
+          '/controller2/test/{id}/test.put.requestBody.content.multipart/form-data.schema': {
+            type: 'object',
+            properties: {
+              file1: { type: 'string', format: 'binary' }
+            }
+          }
+        });
+      });
+
+      it('Should return swagger for end point have multi files upload', () => {
 
         const controllers: any[] = [{
           controllerInfo: { classInstance: {}, prefix: 'controller2', methods: [{ name: 'update' }] },
@@ -324,7 +348,7 @@ describe('swagger/open-api-schema', () => {
 
         getControllerSwagger.returns({ tag: { description: 'test' } });
 
-        const openApiSchema = new OpenApiSchema(controllers, { security: { applyForAll: true, definitions: { basicAuth: true } } });
+        const openApiSchema = new OpenApiSchema(controllers, { security: { enableAllRoutes: true, definitions: { basicAuth: true } } });
 
         expect(openApiSchema.tags[0]).to.deep.equals({ name: 'base', description: 'test' });
         expect(openApiSchema.securityDefinitions).to.deep.equals({ basicAuth: { type: 'basic' } });
@@ -347,7 +371,7 @@ describe('swagger/open-api-schema', () => {
         getControllerMethodSwagger.returns({ securityDefinitions: { apiKeysAuth: ['authKey2'] } });
 
         const openApiSchema = new OpenApiSchema(controllers, {
-          security: { applyForAll: true, definitions: {
+          security: { enableAllRoutes: true, definitions: {
             basicAuth: true,
             apiKeysAuth: [{ key: 'authKey1' }, { key: 'authKey2', in: ApiKeyIn.Query }] }
           }
@@ -377,7 +401,7 @@ describe('swagger/open-api-schema', () => {
         getControllerMethodSwagger.returns({ securityDefinitions: { basicAuth: true }, summary: 'method summary' });
 
         const openApiSchema = new OpenApiSchema(controllers, {
-          security: { applyForAll: true, definitions: {
+          security: { enableAllRoutes: true, definitions: {
             basicAuth: true,
             apiKeysAuth: [{ key: 'authKey1' }] }
           }
@@ -406,7 +430,7 @@ describe('swagger/open-api-schema', () => {
         getControllerSwagger.returns({ securityDefinitions: { basicAuth: true, apiKeysAuth: ['authKey2'] }, summary: 'ctrl summary' });
 
         const openApiSchema = new OpenApiSchema(controllers, {
-          security: { applyForAll: true, definitions: {
+          security: { enableAllRoutes: true, definitions: {
             basicAuth: true,
             apiKeysAuth: [{ key: 'authKey1' }, { key: 'authKey2', in: ApiKeyIn.Query }] }
           }
@@ -436,11 +460,11 @@ describe('swagger/open-api-schema', () => {
         getControllerSwagger.returns({ securityDefinitions: { basicAuth: true, apiKeysAuth: ['authKey2'] }, summary: 'ctrl summary' });
 
         const openApiSchema = new OpenApiSchema(controllers, {
-          security: { applyForAll: true, definitions: {
+          security: { enableAllRoutes: true, definitions: {
             basicAuth: true,
             apiKeysAuth: [{ key: 'authKey1' }, { key: 'authKey2', in: ApiKeyIn.Query }] }
           },
-          enableAll: false
+          enableAllRoutes: false
         });
 
         expect(openApiSchema.securityDefinitions).to.deep.equals({
@@ -462,7 +486,7 @@ describe('swagger/open-api-schema', () => {
         getControllerSwagger.returns({ enable: false });
 
         const openApiSchema = new OpenApiSchema(controllers, {
-          enableAll: true
+          enableAllRoutes: true
         });
 
         expect(openApiSchema.paths).to.deep.equal({});
@@ -479,7 +503,7 @@ describe('swagger/open-api-schema', () => {
         getControllerMethodSwagger.returns({ enable: false });
 
         const openApiSchema = new OpenApiSchema(controllers, {
-          enableAll: true
+          enableAllRoutes: true
         });
 
         expect(openApiSchema.paths).to.deep.equal({});
@@ -495,7 +519,7 @@ describe('swagger/open-api-schema', () => {
         getControllerSwagger.returns({ enable: true });
 
         const openApiSchema = new OpenApiSchema(controllers, {
-          enableAll: false
+          enableAllRoutes: false
         });
 
         expect(openApiSchema.paths).to.deep.nested.include({
@@ -514,7 +538,7 @@ describe('swagger/open-api-schema', () => {
         getControllerMethodSwagger.returns({ enable: true });
 
         const openApiSchema = new OpenApiSchema(controllers, {
-          enableAll: false
+          enableAllRoutes: false
         });
 
         expect(openApiSchema.paths).to.deep.nested.include({

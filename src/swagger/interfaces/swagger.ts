@@ -5,12 +5,12 @@ export interface ISwaggerOptions {
   servers?: ISwaggerAPIServer[];
   basePath?: string;
   schemes?: string[];
-  enableAll?: boolean;
+  enableAllRoutes?: boolean;
   security?: ISwaggerSecurityOptions;
 }
 
 export interface ISwaggerSecurityOptions {
-  applyForAll?: boolean;
+  enableAllRoutes?: boolean;
   definitions?: ISwaggerSecurityConfig;
 }
 
