@@ -1,4 +1,4 @@
-import { ApiKeyIn } from '../enums';
+import { ApiKeyIn, SecurityAuthTypes, SecurityAuthScheme } from '../enums';
 
 export interface ISwaggerOptions {
   info?: ISwaggerAppInfo;
@@ -15,14 +15,43 @@ export interface ISwaggerSecurityOptions {
 }
 
 export interface ISwaggerSecurityConfig {
-  basicAuth?: boolean;
-  apiKeysAuth?: { key: string, in?: ApiKeyIn }[];
+  basic?: { description?: string };
+  apiKeys?: { key: string, in?: ApiKeyIn, description?: string }[];
+  bearer?: { bearerFormat?: string, description?: string };
+  oauth2?: IOauth2Config;
 }
 
 export interface ISwaggerConfig {
   path: string;
   options?: ISwaggerOptions;
 }
+
+export interface IOauth2Config { 
+  description?: string,
+  flows: {
+    authorizationCode?: {
+      authorizationUrl: string,
+      tokenUrl: string,
+      refreshUrl?: string,
+      scope: { [key:string]: string }
+    },
+    implicit?: {
+      authorizationUrl: string,
+      refreshUrl?: string,
+      scope: { [key:string]: string }
+    },
+    password?: {
+      tokenUrl: string,
+      refreshUrl?: string,
+      scope: { [key:string]: string }
+    },
+    clientCredentials?: {
+      tokenUrl: string,
+      refreshUrl?: string,
+      scope: { [key:string]: string }
+    }
+  }
+};
 
 export interface ISwaggerTagConfig {
   description?: string;
@@ -51,12 +80,34 @@ export interface ISwaggerAPIServer {
 }
 
 export interface ISwaggerSecurityDefinitions {
-  [key: string]: {
-    type: string,
-    name?: string,
-    in?: string
-    scheme?: string
-  };
+  basic?: ISwaggerBasic;
+  bearer?: ISwaggerBearer;
+  oauth2?: ISwaggerOauth2;
+  [key: string]: ISwaggerApiKey | any;
+}
+
+export interface ISwaggerBasic {
+  type: SecurityAuthTypes.Basic,
+  scheme: SecurityAuthScheme.Basic
+  description?: string;
+}
+
+export interface ISwaggerApiKey {
+  type: SecurityAuthTypes.ApiKey,
+  name: string,
+  in?: string
+  description?: string;
+}
+
+export interface ISwaggerBearer {
+  type: SecurityAuthTypes.Bearer,
+  scheme: SecurityAuthScheme.Bearer,
+  bearerFormat?: string
+  description?: string;
+}
+
+export interface ISwaggerOauth2 extends IOauth2Config {
+  type: SecurityAuthTypes.Oauth2
 }
 
 export interface IHttpResponseSchema {
@@ -75,8 +126,10 @@ export interface ISwagger {
 }
 
 export interface ISwaggerSecurityKeys {
-  basicAuth?: boolean;
-  apiKeysAuth?: string[];
+  basic?: boolean;
+  apiKeys?: string[];
+  bearer?: boolean;
+  oauth2?: string[];
 }
 
 export interface ISchemaProperties {
@@ -166,7 +219,7 @@ export interface IAction {
   };
 }
 
-export interface IActionSecurity { [key: string]: []; }
+export interface IActionSecurity { [key: string]: string[]; }
 
 export interface IParameter {
   name: string;

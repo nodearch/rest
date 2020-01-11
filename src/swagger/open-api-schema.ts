@@ -1,16 +1,16 @@
 import * as metadata from '../metadata';
 import Joi from '@hapi/joi';
-import path from 'path';
-import { fs } from '@nodearch/core';
 import { ObjectType, ArrayType, NumberType, BoolType, StringType } from './types';
 import { IFileUpload } from '../fileUpload';
 import { IValidationSchema } from '../validation';
 import {
   ISwaggerAPIServer, ISwaggerAppInfo, ISwaggerOptions, IParsedUrl, IHttpResponseSchema, IPaths,
   JsonSchema, IPropertyRule, ISwagger, IPathsUrlParams, IAction, IParameter, IParametersList, IComponents,
-  ISwaggerSecurityDefinitions, ISwaggerSecurityConfig, ISwaggerSecurityKeys, ISwaggerSecurityOptions, ISwaggerTag
+  ISwaggerSecurityDefinitions, ISwaggerSecurityConfig, ISwaggerSecurityKeys, ISwaggerSecurityOptions, ISwaggerTag, ISwaggerBasic, ISwaggerBearer, ISwaggerOauth2
 } from './interfaces';
 import { RestControllerInfo } from '../controller';
+import { SecurityAuthTypes, SecurityAuthScheme } from './enums';
+
 
 export class OpenApiSchema {
   public readonly openapi: string;
@@ -203,12 +203,20 @@ export class OpenApiSchema {
 
   private setValidSecurityKeys(action: IAction, selectedSecurityKeys: ISwaggerSecurityKeys): void {
     if (this.components.securitySchemes) {
-      if (selectedSecurityKeys.basicAuth && this.components.securitySchemes.basicAuth) {
-        action.security.push({ basicAuth: [] });
+      if (selectedSecurityKeys.basic && this.components.securitySchemes.basic) {
+        action.security.push({ basic: [] });
       }
 
-      if (selectedSecurityKeys.apiKeysAuth) {
-        for (const authKey of selectedSecurityKeys.apiKeysAuth) {
+      if (selectedSecurityKeys.bearer && this.components.securitySchemes.bearer) {
+        action.security.push({ bearer: [] });
+      }
+
+      if (selectedSecurityKeys.oauth2 && this.components.securitySchemes.oauth2) {
+        action.security.push({ oauth2: selectedSecurityKeys.oauth2 });
+      }
+
+      if (selectedSecurityKeys.apiKeys) {
+        for (const authKey of selectedSecurityKeys.apiKeys) {
           if (this.components.securitySchemes[authKey]) {
             action.security.push({ [authKey]: [] });
           }
@@ -240,17 +248,25 @@ export class OpenApiSchema {
   private getSecurityDefinitions(securityConfig: ISwaggerSecurityConfig): ISwaggerSecurityDefinitions {
     const securitySchemes: ISwaggerSecurityDefinitions = {};
 
-    if (securityConfig.basicAuth) {
-      securitySchemes.basicAuth = { type: 'http', scheme: 'basic' };
+    if (securityConfig.basic) {
+      securitySchemes.basic = <ISwaggerBasic> Object.assign({ type: SecurityAuthTypes.Basic, scheme: SecurityAuthScheme.Basic }, securityConfig.basic);
     }
 
-    if (securityConfig.apiKeysAuth?.length) {
-      for (const authKey of securityConfig.apiKeysAuth) {
-        securitySchemes[authKey.key] = {
-          name: authKey.key,
-          type: 'apiKey',
-          in: authKey.in || 'header'
-        };
+    if(securityConfig.bearer) {
+      securitySchemes.bearer = <ISwaggerBearer> Object.assign({ type: SecurityAuthTypes.Bearer, scheme: SecurityAuthScheme.Bearer }, securityConfig.bearer);
+    }
+
+    if(securityConfig.oauth2) {
+      securitySchemes.oauth2 = <ISwaggerOauth2> Object.assign({ type: SecurityAuthTypes.Oauth2 }, securityConfig.oauth2);
+    }
+
+    if (securityConfig.apiKeys?.length) {
+      for (const authKey of securityConfig.apiKeys) {
+        securitySchemes[authKey.key] = { name: authKey.key, type: 'apiKey', in: authKey.in || 'header' };
+
+        if(authKey.description) {
+          securitySchemes[authKey.key].description = authKey.description
+        }
       }
     }
 
