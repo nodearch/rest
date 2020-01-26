@@ -1,39 +1,50 @@
-import { ILogger, IAppExtension, IArchApp, ControllerInfo, Logger } from '@nodearch/core';
+import { Logger, IAppExtension, ArchApp, ControllerInfo, createExtension } from '@nodearch/core';
 import express from 'express';
 import * as http from 'http';
-import { Sequence, ExpressSequence, StartExpress, ExpressMiddleware, RegisterRoutes } from './sequence';
-import { IServerConfig } from './interfaces';
+import { ExpressSequence, StartExpress, ExpressMiddleware, RegisterRoutes } from './sequence';
+import { IServerConfig, IServerOptions } from './interfaces';
 import { RestControllerInfo } from './controller';
 import { HttpErrorsRegistry } from './errors/errors-registry';
 
-export class RestServer implements IAppExtension {
+class RestServer implements IAppExtension {
 
   private server: http.Server;
-  private logger: ILogger;
+  private logger: Logger;
   private expressSequence: ExpressSequence[];
   private httpErrorsRegistry: HttpErrorsRegistry;
+
   controllers: RestControllerInfo[];
+  options: IServerOptions;
   config: IServerConfig;
   expressApp: express.Application;
 
 
-  constructor(options: { config: IServerConfig, sequence: Sequence, logger?: ILogger }) {
-    this.controllers = [];
-    this.config = options.config;
-    this.logger = options.logger ? options.logger : new Logger();
-    this.expressSequence = options.sequence.expressSequence;
+  constructor(archApp: ArchApp, options: IServerOptions) {
+    this.logger = archApp.loggerFactory.getLogger('Rest');
+    this.options = options;
+    this.config = this.options.config;
+    this.expressSequence = this.options.sequence.expressSequence;
     this.httpErrorsRegistry = new HttpErrorsRegistry(this.config.httpErrorsOptions);
+    this.controllers = [];
 
     this.expressApp = express();
     this.server = http.createServer(this.expressApp);
   }
 
-  async onStart(archApp: IArchApp) {
-    const controllers: ControllerInfo[] = archApp.getControllers();
-    await this.init(controllers);
+  async onInit(archApp: ArchApp) {
+    // this.logger = archApp.loggerFactory.getLogger('Rest');
   }
 
-  public async init(controllers: ControllerInfo[]) {
+  async onLoad(archApp: ArchApp) {
+    await this.init(archApp);
+  }
+
+  async onStart(archApp: ArchApp) {
+    await this.start();
+  }
+
+  private async init(archApp: ArchApp) {
+    const controllers: ControllerInfo[] = archApp.getControllers();
     const eRegisterRoutesIndex = this.getRegisterRoutesIndex();
     const eStartIndex = this.getStartExpressIndex();
 
@@ -46,8 +57,6 @@ export class RestServer implements IAppExtension {
     });
 
     this.registerSequenceMiddlewares(this.expressSequence.slice(eRegisterRoutesIndex + 1, eStartIndex));
-
-    await this.start();
   }
 
   private getRegisterRoutesIndex() {
@@ -98,3 +107,5 @@ export class RestServer implements IAppExtension {
     this.server.close();
   }
 }
+
+export const restServer = createExtension<IServerOptions>(RestServer);
