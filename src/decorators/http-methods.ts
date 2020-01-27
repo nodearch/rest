@@ -11,7 +11,7 @@ import * as metadata from '../metadata';
  *    - An array of combinations of any of the above.
  *    - examples: https://expressjs.com/en/4x/api.html#path-examples.
  */
-export function Get(path?: string): MethodDecorator {
+export function HttpGet(path?: string): MethodDecorator {
   return <MethodDecorator> function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
 
     metadata.controller.setMethodHTTPMethod(target, propertyKey, HttpMethod.GET);
@@ -31,7 +31,7 @@ export function Get(path?: string): MethodDecorator {
  *    - An array of combinations of any of the above.
  *    - examples: https://expressjs.com/en/4x/api.html#path-examples.
  */
-export function Head(path?: string): MethodDecorator {
+export function HttpHead(path?: string): MethodDecorator {
   return <MethodDecorator> function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
 
     metadata.controller.setMethodHTTPMethod(target, propertyKey, HttpMethod.HEAD);
@@ -51,7 +51,7 @@ export function Head(path?: string): MethodDecorator {
  *    - An array of combinations of any of the above.
  *    - examples: https://expressjs.com/en/4x/api.html#path-examples.
  */
-export function Post(path?: string): MethodDecorator {
+export function HttpPost(path?: string): MethodDecorator {
   return <MethodDecorator> function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
 
     metadata.controller.setMethodHTTPMethod(target, propertyKey, HttpMethod.POST);
@@ -71,7 +71,7 @@ export function Post(path?: string): MethodDecorator {
  *    - An array of combinations of any of the above.
  *    - examples: https://expressjs.com/en/4x/api.html#path-examples.
  */
-export function Put(path?: string): MethodDecorator {
+export function HttpPut(path?: string): MethodDecorator {
   return <MethodDecorator> function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
 
     metadata.controller.setMethodHTTPMethod(target, propertyKey, HttpMethod.PUT);
@@ -91,7 +91,7 @@ export function Put(path?: string): MethodDecorator {
  *    - An array of combinations of any of the above.
  *    - examples: https://expressjs.com/en/4x/api.html#path-examples.
  */
-export function Patch(path?: string): MethodDecorator {
+export function HttpPatch(path?: string): MethodDecorator {
   return <MethodDecorator> function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
 
     metadata.controller.setMethodHTTPMethod(target, propertyKey, HttpMethod.PATCH);
@@ -111,7 +111,7 @@ export function Patch(path?: string): MethodDecorator {
  *    - An array of combinations of any of the above.
  *    - examples: https://expressjs.com/en/4x/api.html#path-examples.
  */
-export function Delete(path?: string): MethodDecorator {
+export function HttpDelete(path?: string): MethodDecorator {
   return <MethodDecorator> function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
 
     metadata.controller.setMethodHTTPMethod(target, propertyKey, HttpMethod.DELETE);
@@ -131,7 +131,7 @@ export function Delete(path?: string): MethodDecorator {
  *    - An array of combinations of any of the above.
  *    - examples: https://expressjs.com/en/4x/api.html#path-examples.
  */
-export function Options(path?: string): MethodDecorator {
+export function HttpOptions(path?: string): MethodDecorator {
   return <MethodDecorator> function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
 
     metadata.controller.setMethodHTTPMethod(target, propertyKey, HttpMethod.OPTIONS);

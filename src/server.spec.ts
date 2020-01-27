@@ -2,7 +2,7 @@ import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { RestServer } from './server';
 import { ArchApp, Injectable, Controller, Module } from '@nodearch/core';
-import { Get, Post, Validate, Middleware, Put, Head, Patch, Delete, Options } from './decorators';
+import { HttpGet, HttpPost, Validate, Middleware, HttpPut, HttpHead, HttpPatch, HttpDelete, HttpOptions } from './decorators';
 import { RegisterRoutes, StartExpress, ExpressMiddleware, Sequence } from './sequence';
 import * as http from 'http';
 import * as Joi from '@hapi/joi';
@@ -31,12 +31,12 @@ describe('server', () => {
         this.s1 = a;
       }
 
-      @Get('/')
+      @HttpGet('/')
       public findAll(): string[] {
         return ['data1', 'data2'];
       }
 
-      @Post('/')
+      @HttpPost('/')
       public create(): string {
         return 'data1';
       }
@@ -58,7 +58,7 @@ describe('server', () => {
         this.s1 = 12;
       }
 
-      @Get('/')
+      @HttpGet('/')
       @Validate({ params: Joi.object() })
       public findAll(): string[] {
         return ['data1', 'data2'];
@@ -66,27 +66,27 @@ describe('server', () => {
 
       @Middleware([() => {}])
       @Validate({ body: Joi.object() })
-      @Put('/:id')
+      @HttpPut('/:id')
       public update(): string {
         return 'data1';
       }
 
-      @Head('/check')
+      @HttpHead('/check')
       public check(): string {
         return 'ok';
       }
 
-      @Patch('/:id/metadata')
+      @HttpPatch('/:id/metadata')
       public partialUpdate(): string {
         return 'data1';
       }
 
-      @Delete('/:id')
+      @HttpDelete('/:id')
       public delete(): string {
         return 'data1';
       }
 
-      @Options('/')
+      @HttpOptions('/')
       public options(): string[] {
         return ['Get', 'Post'];
       }

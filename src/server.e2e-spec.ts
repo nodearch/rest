@@ -2,7 +2,7 @@ import { describe, it } from 'mocha';
 import supertest from 'supertest';
 import { RestServer } from './server';
 import { ArchApp, Injectable, Controller, Module, IGuard } from '@nodearch/core';
-import { Get, Post, Validate, Middleware, Put, Delete, Options } from './decorators';
+import { HttpGet, HttpPost, Validate, Middleware, HttpPut, HttpDelete, HttpOptions } from './decorators';
 import { RegisterRoutes, StartExpress, ExpressMiddleware, Sequence } from './sequence';
 import * as Joi from '@hapi/joi';
 import path from 'path';
@@ -12,7 +12,6 @@ import express = require('express');
 import { ResponseSchemas } from './swagger';
 import { Upload } from './fileUpload';
 import { expect } from 'chai';
-
 
 const fakeLogger = { error: () => { }, warn: () => { }, info: () => { }, debug: () => { } };
 
@@ -36,32 +35,32 @@ describe('[e2e]server', () => {
         this.s1 = a;
       }
 
-      @Get('/')
+      @HttpGet('/')
       public findAll(req: express.Request, res: express.Response) {
         res.json(['data1', 'data2']);
       }
 
-      @Post('/')
+      @HttpPost('/')
       @Upload('file1')
       public create(req: express.Request, res: express.Response) {
         res.json(req.body);
       }
 
-      @Put('/:id')
+      @HttpPut('/:id')
       @Upload([{ name: 'file1', maxCount: 1 }, { name: 'file2', maxCount: 2 }])
       public update(req: express.Request, res: express.Response) {
         req.body.id = Number(req.params.id);
         res.json(req.body);
       }
 
-      @Delete('/:id')
+      @HttpDelete('/:id')
       public remove(req: express.Request, res: express.Response) {
         res.json({ id: Number(req.params.id) });
       }
 
-      @Options('/')
+      @HttpOptions('/')
       public options(req: express.Request, res: express.Response) {
-        res.json(['Get', 'Post']);
+        res.json(['HttpGet', 'HttpPost']);
       }
     }
 
@@ -102,7 +101,7 @@ describe('[e2e]server', () => {
       constructor() { }
 
       @Middleware(middleware3)
-      @Post('/')
+      @HttpPost('/')
       public create(req: express.Request, res: express.Response) {
         res.json(req.body);
       }
@@ -113,7 +112,7 @@ describe('[e2e]server', () => {
         params: Joi.object().keys({ id: Joi.number().default(3).optional() }).optional(),
         headers: Joi.object().keys({ key: Joi.string().optional().default('test') }).optional()
       })
-      @Put('/:id')
+      @HttpPut('/:id')
       public put(req: express.Request, res: express.Response) {
         res.json(req.body);
       }
@@ -168,7 +167,7 @@ describe('[e2e]server', () => {
           ).optional()
         }).required()
       })
-      @Put('/:id')
+      @HttpPut('/:id')
       public update(req: express.Request, res: express.Response) {
         res.json(req.body);
       }
