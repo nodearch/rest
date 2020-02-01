@@ -2,7 +2,7 @@ import * as metadata from '../metadata';
 import { ControllerInfo } from '@nodearch/core';
 import Joi from '@hapi/joi';
 import path from 'path';
-import { fs } from '@nodearch/core';
+import fs from 'fs';
 import { ObjectType, ArrayType, NumberType, BoolType, StringType } from './types';
 import { IFileUpload } from '../fileUpload/file-upload.interface';
 import { IValidationSchema } from '../validation';
@@ -250,7 +250,7 @@ export class OpenApiSchema {
   }
 
   public async writeOpenAPI(dir: string): Promise<void> {
-    await fs.writeFile(path.join(dir, 'swagger.json'), JSON.stringify(this));
+    await fs.promises.writeFile(path.join(dir, 'swagger.json'), JSON.stringify(this));
   }
 
 }

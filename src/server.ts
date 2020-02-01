@@ -1,4 +1,4 @@
-import { Logger, IAppExtension, ArchApp, ControllerInfo, createExtension } from '@nodearch/core';
+import { Logger, IAppExtension, ArchApp, ControllerInfo } from '@nodearch/core';
 import express from 'express';
 import * as http from 'http';
 import { ExpressSequence, StartExpress, ExpressMiddleware, RegisterRoutes } from './sequence';
@@ -6,7 +6,7 @@ import { IServerConfig, IServerOptions } from './interfaces';
 import { RestControllerInfo } from './controller';
 import { HttpErrorsRegistry } from './errors/errors-registry';
 
-class RestServer implements IAppExtension {
+export class RestServer implements IAppExtension {
 
   private server: http.Server;
   private logger: Logger;
@@ -107,5 +107,3 @@ class RestServer implements IAppExtension {
     this.server.close();
   }
 }
-
-export const restServer = createExtension<IServerOptions>(RestServer);
