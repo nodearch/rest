@@ -2,8 +2,6 @@ import { HttpErrorHandler } from './types';
 import { HttpError } from './errors';
 import express from 'express';
 
-
-
 export interface IHttpErrorHandlerInfo {
   error: any;
   handler: HttpErrorHandler;

@@ -7,12 +7,12 @@ import serveStatic from 'serve-static';
 import bodyParser from 'body-parser';
 
 export interface IJsonConfig {
-  enable: boolean;
+  disable?: boolean;
   options?: bodyParser.OptionsJson;
 }
 
 export interface IUrlencodedConfig {
-  enable: boolean;
+  disable?: boolean;
   options?: bodyParser.OptionsUrlencoded;
 }
 
@@ -22,8 +22,8 @@ export interface IServeStaticConfig {
 }
 
 export interface IServerConfig {
-  port: number;
-  hostname: string;
+  port?: number;
+  hostname?: string;
   urlencoded?: IUrlencodedConfig;
   json?: IJsonConfig;
   static?: IServeStaticConfig;
@@ -33,6 +33,6 @@ export interface IServerConfig {
 }
 
 export interface IServerOptions {
-  config: IServerConfig;
-  middlewares: express.RequestHandler[];
+  config?: IServerConfig;
+  middlewares?: express.RequestHandler[];
 }

@@ -9,19 +9,19 @@ class RestServer implements IAppExtension {
 
   private server: http.Server;
   private logger: Logger;
-  private expressMiddlewares: express.RequestHandler[];
+  private expressMiddlewares?: express.RequestHandler[];
   private httpErrorsRegistry: HttpErrorsRegistry;
 
   controllers: RestControllerInfo[];
-  options: IServerOptions;
+  options?: IServerOptions;
   config: IServerConfig;
   expressApp: express.Application;
 
-  constructor(archApp: ArchApp, options: IServerOptions) {
+  constructor(archApp: ArchApp, options?: IServerOptions) {
     this.logger = archApp.loggerFactory.getLogger('Rest');
     this.options = options;
-    this.config = this.options.config;
-    this.expressMiddlewares = this.options.middlewares;
+    this.config = this.getServerConfig(this.options?.config);
+    this.expressMiddlewares = this.options?.middlewares;
     this.httpErrorsRegistry = new HttpErrorsRegistry(this.config.httpErrorsOptions);
     this.controllers = [];
 
@@ -53,23 +53,31 @@ class RestServer implements IAppExtension {
   }
 
   private registerMiddlewares() {
-    this.expressMiddlewares.forEach((middleware: express.RequestHandler) => {
+
+    this.expressMiddlewares?.forEach((middleware: express.RequestHandler) => {
       if (middleware instanceof Function) {
         this.expressApp.use(middleware);
       }
     });
 
-    if (this.config.json?.enable) {
-      this.expressApp.use(express.json(this.config.json.options));
+    if (!this.config.json?.disable) {
+      this.expressApp.use(express.json(this.config.json?.options));
     }
 
-    if (this.config.urlencoded?.enable) {
-      this.expressApp.use(express.urlencoded(this.config.urlencoded.options));
+    if (!this.config.urlencoded?.disable) {
+      this.expressApp.use(express.urlencoded(this.config.urlencoded?.options));
     }
 
     if (this.config.static) {
       this.expressApp.use(express.static(this.config.static.path, this.config.static.options));
     }
+  }
+
+  private getServerConfig(customConfig?: IServerConfig): IServerConfig {
+
+    const defaultConfig: IServerConfig = { port: 3000, hostname: 'localhost' };
+
+    return Object.assign(defaultConfig, customConfig);
   }
 
   async start(): Promise<void> {
